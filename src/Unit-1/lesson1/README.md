@@ -71,27 +71,34 @@ someActorRef.Tell("и это тоже сообщение!");
 
 1. Все аткоры создаются в рамках определенного контекста. 
 
-
-
 1. При создании актора необходимо тажке создать `Props`. `Props` это объект, который инкапсулирует формулу создания определенного актора.
 
-We'll be going into `Props` in depth in lesson 3, so for now don't worry about it much. We've provided the `Props` for you in the code, so you just have to figure out how to use `Props` to make an actor.
 
-The hint we'll give you is that your first actors will be created within the context of your actor system itself. See the exercise instructions for more.
+Подробнее о `Props` будет в третьем уроке, так что пока не особо парьтесь по этому поводу. В коде примеров вы увидите несколько `Props`, этого дложно быть достаточно для понимания, как создать актора с их помощью.
 
-### What is an `ActorSystem`?
-An `ActorSystem` is a reference to the underlying system and Akka.NET framework. All actors live within the context of this actor system. You'll need to create your first actors from the context of this `ActorSystem`.
 
-By the way, the `ActorSystem` is a heavy object: create only one per application.
+Обратите внимание, что первые аткоры будут созданы в рамках контекста вашей системы акторов. Больше деталей - в описании упражения.
 
-Aaaaaaand... go! That's enough conceptual stuff for now, so dive right in and make your first actors.
+### Что такое `ActorSystem` (система акторов)?
 
-## Exercise
-Let's dive in!
 
-> Note: Within the sample code there are sections clearly marked `"YOU NEED TO FILL IN HERE"` - find those regions of code and begin filling them in with the appropriate functionality in order to complete your goals.
+`ActorSystem` - это ссылка на систему акторов, входящую в состав Akka.NET. Все акторы живут в конексте этой системы акторов. Ваши первые акторы также будут созданы в рамках этого конекста.
+
+
+
+Кстати, `ActorSystem`  - очень тяжеловесный объект, не создавайте более одной копии в приложении.
+
+Поооооехали! Покончим с теорией, давайте погрузимся в код и создадим первых аткоров.
+
+
+## Упражнение
+Погружаемся!
+
+> Замечание: внутри примеров кода вы увидите секции, помеченные `"YOU NEED TO FILL IN HERE"`. Вам необходимо найти такие учатки кода, и заполнить их необходимым для выполнения задания функционалом.
 
 ### Launch the fill-in-the-blank sample
+### Запускаеи пример fill-in-the-blank 
+
 Go to the [DoThis](../DoThis/) folder and open [WinTail](../DoThis/WinTail.sln) in Visual Studio. The solution consists of a simple console application and only one Visual Studio project file.
 
 You will use this solution file through all of Unit 1.
