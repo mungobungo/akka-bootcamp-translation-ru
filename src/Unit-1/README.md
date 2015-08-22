@@ -1,105 +1,179 @@
-# Тренировочный центр Akka.NET  - Блок №1: Начало работы с Akka.NET
+# Урок 1.1: Акторы и `ActorSystem`
 
-![Akka.NET logo](../../images/akka_net_logo.png)
+С почином! Добро пожаловать на урок №1.
 
-In Unit 1, we will learn the fundamentals of how the actor model and Akka.NET work.
-В блоке номер 1, мы изучм основы работы Akka.NET и модели акторов.
+На этом уроке вы сможете создать ваших первых акторов и познакомитесь с основами [Akka.NET](http://getakka.net/).
 
-## Concepts you'll learn
+## Ключевые идеи / общая информация
 
-## Концепции, с которыми вы познакомитесь.
+Во время этого урока вы получите практический опыт работы с акторами, в консопльном приложение. Для этого вы создадине систему акторов и несолько акторов в рамках этой системы. 
 
-*NIX systems have the `tail` command built-in to monitor changes to a file (such as tailing log files), whereas Windows does not. We will recreate `tail` for Windows, and use the process to learn the fundamentals.
+Мы напишем двух акторов, один з которых будет читать из консоли, а другой писать в консоль после небольшой обработки данных.
 
+### Что такое актор?
 
-В состав *NIX  входит встроенная команда `tail`, которая позволяет отслеживать изменения в файле (например наблюдать за постоянно растущим  файлом логов). Мы создадим аналог команды `tail` для Windows и одновременно получим практические навыки работы основами.
+"Актор" это просто аналог человека, выполняющего какую-то роль в системе. Этот человек является сущностью, объектом, и может проводить какие-то действия и общаться с другими людьми.
 
-In Unit 1 you will learn the following:
-из блоке №1 вы  сможете узнать следующее:
+> Мы предполагаем, что вам знакомы идеи объектно ориентированного программирования (ООП).  Модель акторов очень похожа на объектно ориентированную модель - в рамках ООП все является объектами, в рамках модели акторов ***все является актором***.
 
-1. How to create your own `ActorSystem` and actors;
-1. Как создавать актором и `ActorSystem5`
-
-2. How to send messages actors and how to handle different types of messages;
-2. Как посылать собщения актоам и как обрабатывать различные типы сообщений
-
-3. How to use `Props` and `IActorRef`s to build loosely coupled systems.
-3. Как исполользовать `Props` и `IActorRef`ы для построения систем со слабой связностью.
-
-4. How to use actor paths, addresses, and `ActorSelection` to send messages to actors.
-4. Как использовать пути акторов, адреса и `ActorSelection` для того, чтобы посылать сообщения нужным акторам.
-
-5. How to create child actors and actor hierarchies, and how to supervise children with `SupervisionStrategy`.
-5. Как создавать дочерних акторов и иерархии акторов, и как контролировать детей при помощи `SupervisionStrategy`.
-
-6. How to use the Actor lifecycle to control actor startup, shutdown, and restart behavior.
-6. Как можно использовать жизненный цикл актора для более тонкого контроля над запуском, остановкой и перезапуском актора.
+Повторяйте про себя: все является актором. Все является актором. Все является актором! Представьте вашу систему как иерархию людей, в которой задачи разбиваются на части и делегируются до тех пор, пока не станут достаточно маленьким для того, чтобы быть качественно выоплненными даже одним актором.
 
 
-## Using Xamarin?
-## Используете Xamarin?
+На данный момент мы подоздерваем что вы думаете примерно так : в рамках ООП вы стараетесь дать каждому объекту простую и четко определенную цель существования. В принципе, система акторов ничем не отличается, за исключением того, что четкая цель теперь в зоне ответственности актором.
 
-Since Unit 1 relies heavily on the console, you'll need to make a small tweaks before beginning. You need to set up your `WinTail` project file (not the solution) to use an **external console**.
+**Дополнительный материал: [Что такое актор в рамках Akka.NET](http://petabridge.com/blog/akkadotnet-what-is-an-actor/)?**
 
-Поскольку блок 1 активно использует консольное приложение, вам необходимо провести небольшую предварительную работу.
- Вам придется настроить проект `WinTail`  (не solution)  на использование  **внешней консоли**.
+### How do actors communicate?
+### Как акторы общаются?
 
-
-To set this up:
-Для того, чтобы это сделать
+Акторы общаются друг с другом точно так же, как и люди - обмениваясь сообщения. А сообщения - это старые добрые классы C#.
 
 
-1. Click on the `WinTail` project (not the solution)
-1. Кликните на проект `WinTail` (не solution)
+```csharp
+//это сообщение !
+public class SomeMessage{
+	public int SomeValue {get; set}
+}
+```
 
-2. Navigate to `Project > WinTail Options` in the menu
-2. В меню нажмите `Project > WinTail Options`
+Более детально мы разберем сообщения на следующем уроке, не волнуйтесь на этот счет. Все что вам надо сейчас знать, это то, что сообщения можно отправить другому актору при помощи метода `Tell()`
 
-3. Inside `WinTail Options`, navigate to `Run > General`
-3. Внутри `WinTail Options`, перейдите к `Run > General`
+```csharp
+//посылаем сообщение другому актору
+someActorRef.Tell("и это тоже сообщение!");
+```
 
-4. Select `Run on external console`
-4. Выберите опцию `Run on external console`
+### Что акторы могут делать?
+
+Все что вы запрограммируюете. Серьезно :)
+
+Вы создаете акторов, заставляете их обрабатывать сообщения, которые они получают, и акторы могут сделать все что угодно для того, тчобы обработать сообщение. Делать запросы к базе данных, писать в файл, изменять внутренние переменные, или любые другие вещи, которые могут вам понадобиться.
+
+Помимо обработки сообщений, актор может:
+
+1. Создавать других акторов
+
+2. Посылать сообщения другим акторам (например отправителю текущего сообщения, используя свойство `Sender`)
+
+3. Менять свое поведение и обрабатывать следующее полученное сообщение по-другому
+
+Actors are inherently asynchronous (more on this in a future lesson), and there is nothing about the [Actor Model](https://en.wikipedia.org/wiki/Actor_model) that says which of the above an actor must do, or the order it has to do them in. It's up to you.
+
+Акторы жестоко асинхронны.
+### What kinds of actors are there?
+All types of actors inherit from `UntypedActor`, but don't worry about that now. We'll cover different actor types later.
+
+In Unit 1 all of your actors will inherit from [`UntypedActor`](http://getakka.net/docs/Working%20with%20actors#untypedactor-api "Akka.NET - UntypedActor API").
+
+### How do you make an actor?
+There are 2 key things to know about creating an actor:
+
+1. All actors are created within a certain context. That is, they are "actor of" a context.
+1. Actors need `Props` to be created. A `Props` object is just an object that encapsulates the formula for making a given kind of actor.
+
+We'll be going into `Props` in depth in lesson 3, so for now don't worry about it much. We've provided the `Props` for you in the code, so you just have to figure out how to use `Props` to make an actor.
+
+The hint we'll give you is that your first actors will be created within the context of your actor system itself. See the exercise instructions for more.
+
+### What is an `ActorSystem`?
+An `ActorSystem` is a reference to the underlying system and Akka.NET framework. All actors live within the context of this actor system. You'll need to create your first actors from the context of this `ActorSystem`.
+
+By the way, the `ActorSystem` is a heavy object: create only one per application.
+
+Aaaaaaand... go! That's enough conceptual stuff for now, so dive right in and make your first actors.
+
+## Exercise
+Let's dive in!
+
+> Note: Within the sample code there are sections clearly marked `"YOU NEED TO FILL IN HERE"` - find those regions of code and begin filling them in with the appropriate functionality in order to complete your goals.
+
+### Launch the fill-in-the-blank sample
+Go to the [DoThis](../DoThis/) folder and open [WinTail](../DoThis/WinTail.sln) in Visual Studio. The solution consists of a simple console application and only one Visual Studio project file.
+
+You will use this solution file through all of Unit 1.
+
+### Install the latest Akka.NET NuGet package
+In the Package Manager Console, type the following command:
+
+```
+Install-Package Akka
+```
+
+This will install the latest Akka.NET binaries, which you will need in order to compile this sample.
+
+Then you'll need to add the `using` namespace to the top of `Program.cs`:
 
 
-5. Click `OK`
-5. Кликните `OK`
+```csharp
+// in Program.cs
+using Akka.Actor;
+```
 
-Here is a demonstration of how to set it up:
-![Configure Xamarin to use external console](../../images/xamarin.gif)
-Ниже приведен пример правильной настройки проекта:
-![Configure Xamarin to use external console](../../images/xamarin.gif)
+### Make your first `ActorSystem`
+Go to `Program.cs` and add this to create your first actor system:
+
+```csharp
+MyActorSystem = ActorSystem.Create("MyActorSystem");
+```
+>
+> **NOTE:** When creating `Props`, `ActorSystem`, or `ActorRef` you will very rarely see the `new` keyword. These objects must be created through the factory methods built into Akka.NET. If you're using `new` you might be making a mistake.
+
+### Make ConsoleReaderActor & ConsoleWriterActor
+The actor classes themselves are already defined, but you will have to make your first actors.
+
+Again, in `Program.cs`, add this just below where you made your `ActorSystem`:
+
+```csharp
+var consoleWriterActor = MyActorSystem.ActorOf(Props.Create(() => new ConsoleWriterActor()));
+var consoleReaderActor = MyActorSystem.ActorOf(Props.Create(() => new ConsoleReaderActor(consoleWriterActor)));
+```
+
+We will get into the details of `Props` and `ActorRef`s in lesson 3, so don't worry about them much for now. Just know that this is how you make an actor.
+
+### Have ConsoleReaderActor Send a Message to ConsoleWriterActor
+Time to put your first actors to work!
+
+You will need to do the following:
+
+1. ConsoleReaderActor is set up to read from the console. Have it send a message to ConsoleWriterActor containing the content that it just read.
+
+	```csharp
+	// in ConsoleReaderActor.cs
+	_consoleWriterActor.Tell(read);
+	```
+
+2. Have ConsoleReaderActor send a message to itself after sending a message to ConsoleWriterActor. This is what keeps the read loop going.
+
+	```csharp
+	// in ConsoleReaderActor.cs
+	Self.Tell("continue");
+	```
+3. Send an initial message to ConsoleReaderActor in order to get it to start reading from the console.
+
+	```csharp
+	// in Program.cs
+	consoleReaderActor.Tell("start");
+	```
+
+### Step 5: Build and Run!
+Once you've made your edits, press `F5` to compile and run the sample in Visual Studio.
+
+You should see something like this, when it is working correctly:
+![Petabridge Akka.NET Bootcamp Lesson 1.1 Correct Output](Images/example.png)
 
 
-## Table of Contents
-## Оглавление
+### Once you're done
+Compare your code to the code in the [Completed](Completed/) folder to see what the instructors included in their samples.
 
-1. **[Lesson 1 - Actors and the `ActorSystem`](lesson1/)**
-1. **[Урок 1 - Акторы и `ActorSystem`](lesson1/)**
+## Great job! Onto Lesson 2!
+Awesome work! Well done on completing your first lesson.
 
-2. **[Lesson 2 - Defining and Handling Messages](lesson2/)**
-2. **[Урок 2 - Создание и обработка сообщений](lesson2/)**
+**Let's move onto [Lesson 2 - Defining and Handling Different Types of Messages](../lesson2).**
 
-3. **[Lesson 3: Using `Props` and `IActorRef`s](lesson3/)**
-3. **[Урок 3: Используем `Props` и `IActorRef`s](lesson3/)**
+## Any questions?
+**Don't be afraid to ask questions** :).
 
+Come ask any questions you have, big or small, [in this ongoing Bootcamp chat with the Petabridge & Akka.NET teams](https://gitter.im/petabridge/akka-bootcamp).
 
-4. **[Lesson 4: Child Actors, Hierarchies, and Supervision](lesson4/)**
-4. **[Урок 4: Дочерние акторы, иерархии и супервизоры](lesson4/)**
-
-
-5. **[Lesson 5: Looking up actors by address with `ActorSelection`](lesson5/)**
-5. **[Урок 5: Ищем акторов по адресу при помощи `ActorSelection`](lesson5/)**
-
-6. **[Lesson 6: The Actor Lifecycle](lesson6/)**
-6. **[Урок 6: Жизненный цикл актора](lesson6/)**
-
-
-## Get Started
-## Начинаем
-
-To get started, [go to the /DoThis/ folder](DoThis/) and open `WinTail.sln`.
-
-Прежде всего, [перейдите в папку  /DoThis/ ](DoThis/) и откройте `WinTail.sln`.
-
-Потом идите в [Lesson 1](lesson1/).
+### Problems with the code?
+If there is a problem with the code running, or something else that needs to be fixed in this lesson, please [create an issue](https://github.com/petabridge/akka-bootcamp/issues) and we'll get right on it. This will benefit everyone going through Bootcamp.
