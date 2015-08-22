@@ -53,23 +53,27 @@ someActorRef.Tell("и это тоже сообщение!");
 
 1. Создавать других акторов
 
-2. Посылать сообщения другим акторам (например отправителю текущего сообщения, используя свойство `Sender`)
+1. Посылать сообщения другим акторам (например отправителю текущего сообщения, используя свойство `Sender`)
 
-3. Менять свое поведение и обрабатывать следующее полученное сообщение по-другому
+1. Менять свое поведение и обрабатывать следующее полученное сообщение по-другому
 
-Actors are inherently asynchronous (more on this in a future lesson), and there is nothing about the [Actor Model](https://en.wikipedia.org/wiki/Actor_model) that says which of the above an actor must do, or the order it has to do them in. It's up to you.
+Акторы по своей природе асинхронны(более подробно об этом на следующем уроке). И в [Модели акторов](https://en.wikipedia.org/wiki/Actor_model) не указано, какие из приведенных пунктов обязательны для актора, точно так же как не указан порядок, в котором эти действия следует выполнять. Все в ваших руках.
 
-Акторы жестоко асинхронны.
-### What kinds of actors are there?
-All types of actors inherit from `UntypedActor`, but don't worry about that now. We'll cover different actor types later.
+### Какие существуют типы акторов?
 
-In Unit 1 all of your actors will inherit from [`UntypedActor`](http://getakka.net/docs/Working%20with%20actors#untypedactor-api "Akka.NET - UntypedActor API").
+Все типы акторов наследуются от `UntypedActor`, но это пока не очень важно. Детальный разбор разных акторов будет чуть позже.
 
-### How do you make an actor?
-There are 2 key things to know about creating an actor:
+В блоке 1 все ваши акторы будут наследниками [`UntypedActor`](http://getakka.net/docs/Working%20with%20actors#untypedactor-api "Akka.NET - UntypedActor API").
 
-1. All actors are created within a certain context. That is, they are "actor of" a context.
-1. Actors need `Props` to be created. A `Props` object is just an object that encapsulates the formula for making a given kind of actor.
+### Как можно создать актора?
+
+Для создания акотора необходимо знать две основные вещи:
+
+1. Все аткоры создаются в рамках определенного контекста. 
+
+
+
+1. При создании актора необходимо тажке создать `Props`. `Props` это объект, который инкапсулирует формулу создания определенного актора.
 
 We'll be going into `Props` in depth in lesson 3, so for now don't worry about it much. We've provided the `Props` for you in the code, so you just have to figure out how to use `Props` to make an actor.
 
