@@ -96,23 +96,24 @@ someActorRef.Tell("и это тоже сообщение!");
 
 > Замечание: внутри примеров кода вы увидите секции, помеченные `"YOU NEED TO FILL IN HERE"`. Вам необходимо найти такие учатки кода, и заполнить их необходимым для выполнения задания функционалом.
 
-### Launch the fill-in-the-blank sample
 ### Запускаеи пример fill-in-the-blank 
 
-Go to the [DoThis](../DoThis/) folder and open [WinTail](../DoThis/WinTail.sln) in Visual Studio. The solution consists of a simple console application and only one Visual Studio project file.
 
-You will use this solution file through all of Unit 1.
+Перейдите в папку [DoThis](../DoThis/) и откройте [WinTail](../DoThis/WinTail.sln) в Visual Studio. Солюшен состоит из простого консольного приложения и всего лишь одного проекта Visual Studio.
 
-### Install the latest Akka.NET NuGet package
-In the Package Manager Console, type the following command:
+Вы будете пользоваться этим солюшеном на протяжении всего первого блока.
+
+### Устанавливаем свежую версию NuGet  пакета Akka.NET 
+
+В консоли  Package Manager наберите следующую команду:
 
 ```
 Install-Package Akka
 ```
 
-This will install the latest Akka.NET binaries, which you will need in order to compile this sample.
+Таким образом установится последйний билд Akka.NET, который вам понадобится для того, чтобы скомпилировать приложение.
 
-Then you'll need to add the `using` namespace to the top of `Program.cs`:
+После этого добавьте использование пространства имен в файж `Program.cs`:
 
 
 ```csharp
@@ -120,8 +121,9 @@ Then you'll need to add the `using` namespace to the top of `Program.cs`:
 using Akka.Actor;
 ```
 
-### Make your first `ActorSystem`
-Go to `Program.cs` and add this to create your first actor system:
+### Создаем первый экземпляр `ActorSystem`
+
+Откройте файл `Program.cs` и добавьте следующие строки для того, чтобы создать первую систему акторов.
 
 ```csharp
 MyActorSystem = ActorSystem.Create("MyActorSystem");
@@ -129,62 +131,72 @@ MyActorSystem = ActorSystem.Create("MyActorSystem");
 >
 > **NOTE:** When creating `Props`, `ActorSystem`, or `ActorRef` you will very rarely see the `new` keyword. These objects must be created through the factory methods built into Akka.NET. If you're using `new` you might be making a mistake.
 
-### Make ConsoleReaderActor & ConsoleWriterActor
-The actor classes themselves are already defined, but you will have to make your first actors.
 
-Again, in `Program.cs`, add this just below where you made your `ActorSystem`:
+> **Внимание** При создании `Props`, `ActorSystem`, или `ActorRef` вы редко будете пользоваться ключевым словом `new` . Эти объекты должны создаваться только при помощи фабричных методов встроенных в Akka.NET. Пользоваться `new` - значит совершать ошибку.
+
+
+### Создаем акторов для чтения и записи в консоль (ConsoleReaderActor и ConsoleWriterActor)
+
+Классы этих акторов уже написаны, но вам необходимо создать экземпляры этих акторов.
+
+В файле `Program.cs`,  добавьте следующие строки сразу после создания вашей `ActorSystem`:
 
 ```csharp
 var consoleWriterActor = MyActorSystem.ActorOf(Props.Create(() => new ConsoleWriterActor()));
 var consoleReaderActor = MyActorSystem.ActorOf(Props.Create(() => new ConsoleReaderActor(consoleWriterActor)));
 ```
 
-We will get into the details of `Props` and `ActorRef`s in lesson 3, so don't worry about them much for now. Just know that this is how you make an actor.
 
-### Have ConsoleReaderActor Send a Message to ConsoleWriterActor
-Time to put your first actors to work!
+Вот в принципе все что надо для создания актора. Подробный разбор `Props` и `ActorRef`-ов отложим до третьего урока, пока просто пользуйтесь ими по аналогии.
 
-You will need to do the following:
+###  ConsoleReaderActor посылает собщение ConsoleWriterActor
+Самое время заставить ваших акторов взяться за работу!
 
-1. ConsoleReaderActor is set up to read from the console. Have it send a message to ConsoleWriterActor containing the content that it just read.
+Вам понадобится следующее:
+
+
+1. ConsoleReaderActor настроен на чтение из консоли. Он отсылает сообщение актору ConsoleWriterActor, в котором передает только что прочитанную с консоли информацию.
 
 	```csharp
-	// in ConsoleReaderActor.cs
+	// в файле ConsoleReaderActor.cs
 	_consoleWriterActor.Tell(read);
 	```
 
-2. Have ConsoleReaderActor send a message to itself after sending a message to ConsoleWriterActor. This is what keeps the read loop going.
+2. После отправки сообщения ConsoleWriterActor,  ConsoleReaderActor отправляет сообщение самому себе. Это необходимо для того, чтобы цикл чтения данных из консоли продолжался.
 
 	```csharp
-	// in ConsoleReaderActor.cs
+	// в файле ConsoleReaderActor.cs
 	Self.Tell("continue");
 	```
-3. Send an initial message to ConsoleReaderActor in order to get it to start reading from the console.
+3. Отправляем первое сообщение актору  ConsoleReaderActor для того, чтобы начать чтение данных с консоли.
 
 	```csharp
-	// in Program.cs
+	// в файле Program.cs
 	consoleReaderActor.Tell("start");
 	```
 
-### Step 5: Build and Run!
-Once you've made your edits, press `F5` to compile and run the sample in Visual Studio.
+### Шаг 5: Собираем и запускаем!
+После того, как все изменения внесены нажмите `F5`, чтобы скомпилировать и запустить проект в Visual Studio.
 
-You should see something like this, when it is working correctly:
+Если все работает правильно, вы должны увидеть что-то подобно этому:
 ![Petabridge Akka.NET Bootcamp Lesson 1.1 Correct Output](Images/example.png)
 
 
-### Once you're done
-Compare your code to the code in the [Completed](Completed/) folder to see what the instructors included in their samples.
 
-## Great job! Onto Lesson 2!
-Awesome work! Well done on completing your first lesson.
+### Когда вы закончили
+Сравните ваш код с кодом, приведенным в папке [Completed](Completed/) чтобы увидеть дополнительные инструкции.
 
-**Let's move onto [Lesson 2 - Defining and Handling Different Types of Messages](../lesson2).**
 
-## Any questions?
-**Don't be afraid to ask questions** :).
+## Отличная работа! Переходим к уроку №2 !
+Здорово! Поздравляем с завершением первого урока!
 
-Come ask any questions you have, big or small, [in this ongoing Bootcamp chat with the Petabridge & Akka.NET teams](https://gitter.im/petabridge/akka-bootcamp).
+**Переходим к  [Уроку 2 - Создание и обработка различных типов сообщений](../lesson2).**
 
-### Problems with the code?
-If there is a problem with the code running, or something else that needs to be fixed in this lesson, please [create an issue](https://github.com/petabridge/akka-bootcamp/issues) and we'll get right on it. This will benefit everyone going through Bootcamp.
+## Есть вопросы?
+**Не стесняйтесь задавать вопроосы** :).
+
+
+Можете задавать любые вопросы, большие и маленькие, [в этом чате команд Petabridge и Akka.NET (английский)](https://gitter.im/petabridge/akka-bootcamp).
+
+### Проблемы с кодом?
+Если у вас возникил проблемы с запуском кода или чем-то другим, что необходимо починить в уроке, пожалуйста, [создайте issue](https://github.com/petabridge/akka-bootcamp/issues) и мы это пофиксим. Таким образом вы поможете всем кто будет проходить эту обучалку.
