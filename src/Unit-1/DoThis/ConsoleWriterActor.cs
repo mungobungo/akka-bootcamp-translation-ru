@@ -4,28 +4,27 @@ using Akka.Actor;
 namespace WinTail
 {
     /// <summary>
-    /// Actor responsible for serializing message writes to the console.
-    /// (write one message at a time, champ :)
+    ///  Актор, отвечающий за вывод сообщения в консоль.
+    /// (пишет по одному сообщению за раз :)
     /// </summary>
     class ConsoleWriterActor : UntypedActor
     {
         protected override void OnReceive(object message)
         {
             var msg = message as string;
-
-            // make sure we got a message
+            // Убедимся, что мы что-то получили
             if (string.IsNullOrEmpty(msg))
             {
                 Console.ForegroundColor = ConsoleColor.DarkYellow;
-                Console.WriteLine("Please provide an input.\n");
+                Console.WriteLine("Пожалуйста, введите что-нибудь.\n");
                 Console.ResetColor();
                 return;
             }
 
-            // if message has even # characters, display in red; else, green
+            // Если сообщение содержит четное число символов, напишем его красным, иначе зеленым
             var even = msg.Length % 2 == 0;
             var color = even ? ConsoleColor.Red : ConsoleColor.Green;
-            var alert = even ? "Your string had an even # of characters.\n" : "Your string had an odd # of characters.\n";
+            var alert = even ? "В вашей строке четное число символов.\n" : "В вашей строке нечетное число символов.\n";
             Console.ForegroundColor = color;
             Console.WriteLine(alert);
             Console.ResetColor();
