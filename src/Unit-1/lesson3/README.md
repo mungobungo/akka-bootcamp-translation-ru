@@ -408,15 +408,17 @@ We've left a little landmine as a demonstration. You should blow it up just to s
 
 Okay, so what was the point of that? Contrived as that example was, it should show you that *using the `typeof` syntax for `Props` has no type safety and is best avoided unless you have a damn good reason to use it.*
 
-## Great job! Onto Lesson 4!
-Awesome work! Well done on completing your this lesson. It was a big one.
 
-**Let's move onto [Lesson 4 - Child Actors, Actor Hierarchies, and Supervision](../lesson4).**
+## Отличная работа! Переходим к уроку №4 !
+Ухх, это было непросто!
 
-## Any questions?
-**Don't be afraid to ask questions** :).
+**Переходим к  [Уроку 4 - Дочерние акторы, иерархия акторов и супервизоры](../lesson4).**
 
-Come ask any questions you have, big or small, [in this ongoing Bootcamp chat with the Petabridge & Akka.NET teams](https://gitter.im/petabridge/akka-bootcamp).
+## Есть вопросы?
+**Не стесняйтесь задавать вопроосы** :).
 
-### Problems with the code?
-If there is a problem with the code running, or something else that needs to be fixed in this lesson, please [create an issue](https://github.com/petabridge/akka-bootcamp/issues) and we'll get right on it. This will benefit everyone going through Bootcamp.
+
+Можете задавать любые вопросы, большие и маленькие, [в этом чате команд Petabridge и Akka.NET (английский)](https://gitter.im/petabridge/akka-bootcamp).
+
+### Проблемы с кодом?
+Если у вас возникил проблемы с запуском кода или чем-то другим, что необходимо починить в уроке, пожалуйста, [создайте issue](https://github.com/petabridge/akka-bootcamp/issues) и мы это пофиксим. Таким образом вы поможете всем кто будет проходить эту обучалку.
