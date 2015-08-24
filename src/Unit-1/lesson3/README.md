@@ -4,27 +4,27 @@
 
 Мы немного изменим нашу программу. Изменения будут касаться `ConsoleReaderActor`. Ему больше не придется заниматься валидацеи. Вместо этого он будет пересылать собщения другому актору, который теперь отвечает за валидацию (а именно- `ValidationActor`). 
 
-## Key concepts / background
-### `IActorRef`s
-#### What is an `IActorRef`?
-An [`IActorRef`](http://api.getakka.net/docs/stable/html/56C46846.htm "Akka.NET Stable API Docs - IActorRef") is a reference or handle to an actor. The purpose of an `IActorRef` is to support sending messages to an actor through the `ActorSystem`. You never talk directly to an actor—you send messages to its `IActorRef` and the `ActorSystem` takes care of delivering those messages for you.
+## Ключевые идеи / общая информация
+### `IActorRef`ы
+#### Что такое `IActorRef`?
+Вообще говоря [`IActorRef`](http://api.getakka.net/docs/stable/html/56C46846.htm "Akka.NET Stable API Docs - IActorRef") это ссылка на актора. Цель `IActorRef`-а обеспечение поддержки отправки сообщений между акторами через `ActorSystem`. Вы никогда не общаетесь с актором напрямую. Вы посылаете сообщение `IActorRef`-у нужного актора и `ActorSystem` позаботится о доставке вашего сообщения.
 
-#### WTF? I don't actually talk to my actors? Why not?
-You do talk to them, just not directly :) You have to talk to them via the intermediary of the `ActorSystem`.
+#### Какого? Я не могу общаться со своими акторами? Почему это вдруг?
+Вы можете общаться с ними, только не напрямую :) Вы должны говорить с ними через посредника в виде `ActorSystem`.
 
-Here are two of the reasons why it is an advantage to send messages to an `IActorRef` and let the underlying `ActorSystem` do the work of getting the messages to the actual actor.
-  - It gives you better information to work with and messaging semantics. The `ActorSystem` wraps all messages in an `Envelope` that contains metadata about the message. This metadata is automatically unpacked and made available in the context of your actor.
-  - It allows "location transparency": this is a fancy way of saying that you don't have to worry about which process or machine your actor lives in. Keeping track of all this is the system's job. This is essential for allowing remote actors, which is how you can scale an actor system up to handle massive amounts of data (e.g. have it work on multiple machines in a cluster). More on this later.
+Вот вам пара причин, почему стоит посылать сообщения через `IActorRef`, и позволить `ActorSystem` выполнять работу по доставке сообщений до нужного актора.
+  - Вы получаете дополнительную информацию о семантике сообщений. `ActorSystem` оборачивает все сообщения в конверт(`Envelope`)который содержит метаданные сообщения. Эти метаданные автоматически распаковываются и становятся доступны в контексте вашего актора.
+  - Вы получаете "прозрачность местоположения": вам не надо беспокоиться на какой машине в сети запущен ваш актор. Заботиться об этом - задача системы. Это просто необходимо для удаленных аткоров, при помощи которых вы можете масштабировать вашу систему акторов для обработки больших объемов данных. (например можно сделать кластер из акторов, работающих на нескольких машинах). 
 
-#### How do I know my message got delivered to the actor?
-For now, this is not something you should worry about. The underlying `ActorSystem` of Akka.NET itself provides mechanisms to guarantee this, but `GuaranteedDeliveryActors` are an advanced topic.
+#### Как я знаю, что сообщение доставлено актору?
+На данный момент вам не стоит беспокоиться об этом. Низкоуровневая  `ActorSystem` входящая в состав Akka.NET обеспечивает механизм подобной доставки. Но  акторы с гарантией доставки (`GuaranteedDeliveryActors`) это более продвинутая тема, которую мы разберем позже.
 
-For now, just trust that delivering messages is the `ActorSystem`s job, not yours. Trust, baby. :)
+Сейсас просто поверьте, что доставлять сообщения это работа для `ActorSystem`, а не для вас. Вера двигает горы :)
 
-#### Okay, fine, I'll let the system deliver my messages. So how do I get an `IActorRef`?
-There are two ways to get an `IActorRef`.
+#### ммм...ладненько, пусть система занимается доставкой сообщений. Так как вы говорите получить `IActorRef`?
+Есть два основных способа получения `IActorRef`.
 
-##### 1) Create the actor
+##### 1) Создание актора
 Actors form intrinsic supervision hierarchies (we cover in detail in lesson 5). This means there are "top level" actors, which essentially report directly to the `ActorSystem` itself, and there are "child" actors, which report to other actors.
 
 To make an actor, you have to create it from its context. And **you've already done this!** Remember this?
