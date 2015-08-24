@@ -1,7 +1,8 @@
-# Lesson 1.3: `Props` and `IActorRef`s
-In this lesson, we will review/reinforce the different ways you can create actors and send them messages. This lesson is more conceptual and has less coding for you to do, but it's an essential foundation and key to understanding the code you will see down the line.
+# Урок 1.3: `Props` и `IActorRef`ы
 
-In this lesson, the code has changed a bit. The change is that the `ConsoleReaderActor` no longer does any validation work, but instead, just passes off the messages it receives from the console to another actor for validation (the `ValidationActor`).
+На этом уроке мы более подробно разберем различные способы, которыми можно отправить сообщения. Этот урок больше концептуальный, поэтому много кода писать не придется. Но он чрезвычайно важен и дает понимание ключевых идей, с которыми вы столкнетесь позже. 
+
+Мы немного изменим нашу программу. Изменения будут касаться `ConsoleReaderActor`. Ему больше не придется заниматься валидацеи. Вместо этого он будет пересылать собщения другому актору, который теперь отвечает за валидацию (а именно- `ValidationActor`). 
 
 ## Key concepts / background
 ### `IActorRef`s
