@@ -1,24 +1,29 @@
-# Lesson 1.2: Defining and Handling Messages
-In this lesson, you will make your own message types and use learn how to control processing flow within your actors based on your custom messages. Doing so will teach you the fundamentals of communicating in a message- and event-driven manner within your actor system.
+# Урок 1.2: Создание и обработка сообщений
 
-This lesson picks up right where Lesson 1 left off, and continues extending our budding systems of console actors. In addition to defining our own messages, we'll also add some simple validation for the input we enter and take action based on the results of that validation.
+На этом уроке вы создадите свои собственные сообщения разных типов и научитесь контролировать процесс обработки их акторами. Таким образом вы познакомитесь с основами обмена информацией при помощи сообщеий  а также событийно-ориентированным подходом в рамках системы акторов.
 
-## Key concepts / background
-### What is a message?
-Any POCO can be a message. A message can be a `string`, a value like `int`, a type, an object that implements an interface... whatever you want.
 
-That being said, the recommended approach is to make your own custom messages into semantically named classes, and to encapsulate any state you want inside those classes (e.g. store a `Reason` inside a `ValidationFailed` class... hint, hint...).
+Этот урок стартует в том месте, где мы завершили урок номер 1. Мы продложим расширять функционоальные возможности наших консольных акторов. Помимо определения собственных сообщений, мы также добавим доплнительную валидацию вводимых данных, на основе которой будем предпринимать различные действия.
 
-### How do I send an actor a message?
-As you saw in the first lesson, you `Tell()` the actor the message.
 
-### How do I handle a message?
-This is entirely up to you, and doesn't really have much to do with Akka.NET. You can handle (or not handle) a message as you choose within an actor.
+## Ключевые идеи / общая информация
+### Что такое сообщение?
+Любой C# объект может быть сообщением. Сообщение можем иметь тип `string`, быть `int`-овым значением, типом, объектом реализцющим интерфейс... быть всем чем угодно.
 
-### What happens if my actor receives a message it doesn't know how to handle?
-Actors ignore messages they don't know how to handle. Whether or not this ignored message is logged as such depends on the type of actor.
+Несмотря на полную свободу в определении сообщений, рекомендуемый подоход это создавать собственные сообщения внутри классов, которые обрабатывают эти сообщения. Также постарайтесь инкапсулировать любое состояние внутри этих классов (например сохраните причину ошибки валидации в поле `Reason` класса `ValidationFailed`... подсказка, подсказка)
 
-With an `UntypedActor`, unhandled messages are not logged as unhandled unless you manually mark them as such, like so:
+### Как я могу отослать сообщение актору?
+Как вы уже успели увидеть в первом уроке, достаточно использовать `Tell()` для отправки сообщений.
+
+### Как мне обработать сообщение?
+
+Это полностью зависит от вас. И практически никак не связано с Akka.NET. Вы можете обработать (или не обработать) сообщение которые вы получили в акторе.
+
+### Что будет, если мой актор получит сообщение, которе не знает как обрабатывать?
+
+Акторы игнорируют те сообщения, которые не знают как обрабатывать. Попадет ли это сообщение в лог зависит от типа актора.
+
+Если использовать `UntypedActor`, необработанные сообщения не будут записаны в лог, только если вы явно не пометите их вроде такого:
 
 ```csharp
 
@@ -40,19 +45,20 @@ class MyActor : UntypedActor
 }
 ```
 
-However, in a `ReceiveActor`—which we cover in Unit 2—unhandled messages are automatically sent to `Unhandled` so the logging is done for you.
+Однако при использовании `ReceiveActor`, с которым мы разберемся в блоке 2, для необработанных сообщений автоматически вызывается  `Unhandled`, так что отправка в лог будет сделана автовматически..
 
-### How do my actors respond to messages?
-This is up to you - you can respond by simply processing the message, replying to the `Sender`, forwarding the message onto another actor, or doing nothing at all.
+### Как актор может ответить на сообщение?
+Как захотите - вы можете ответить простой обработкой сообщения, отсылкой ответа `Sender`-у, пересылкой сообщения другому актору, а можете вообще ничего не делать.
 
-> **NOTE:** Whenever your actor receives a message, it will always have the sender of the current message available via the `Sender` property inside your actor.
+> **Внимание:** Каждый раз когда актор получает сообщения, он может достучаться до отправителя, используя свойство `Sender`.
 
-## Exercise
-In this exercise, we will introduce some basic validation into our system. We will then use custom message types to signal the results of that validation back to the user.
+## Упражнение
+В этом упражденнии, мы добавим в нашу систему базовую валидацию. Для этого мы будем использовать собственные типы сообщений, которые будут сигнализировать о корректности обработки сообщений.
 
-### Phase 1: Define your own message types
-#### Add a new class called `Messages` and the corresponding file, `Messages.cs`.
+### Шаг номер 1: Определение собственных типов сообщений
+#### Создайте новый класс `Messages` в файле `Messages.cs`.
 This is the class we'll use to define system-level messages that we can use to signal events. The pattern we'll be using is to turn events into messages. That is, when an event occurs, we will send an appropriate message class to the actor(s) that need to know about it, and then listen for / respond to that message as needed in the receiving actors.
+Этот класс будет использоваться для определения системных сообщений, которые будут сигнализировать о наступлении событий. Этот паттерн мы будем использовать чтобы преобразовать события в сообщения. Таким образом, когда случится событие, мы пошлем соответственное сообщение актору(-ам), которым это интересно. А потом будем слушать и отвечать на это сообщение.
 
 #### Add regions for each message type
 Add three regions for different types of messages to the file. Next we'll be creating our own message classes that we'll use to signify events.
