@@ -89,50 +89,50 @@ IActorRef myFirstActor = MyActorSystem.ActorOf(Props.Create(() => new MyActorCla
 До сих пор, все `Props`-ы, которые мы видели, включали в себя только ингридиенты в виде типа актора и параметров для конструктора.
 НО, вы еще не видели, как `Props`-ы можно расширить информацие об удаленном развертывании актора, и другими конфигурационными параметрами. Например, `Props`-ы являются сериализируемымы сущностями, так что их можно использовать для того, чтобы удаленно создавать и развертывать группы акторов, на другой машине на противоположном участке сети!
 
-That's getting way ahead of ourselves though, but the short answer is that we need `Props` to support a lot of the advanced features (clustering, remote actors, etc) that give Akka.NET the serious horsepower which makes it interesting.
-Мы сильно забегаем вперед, но вкратце - `Props`-ы нужны для поддержки продвинутых возможностей для создания акторов. Например кластеры, удаленные акторы и т.п. Эти вещи добавляют дополнительные ш
+Мы сильно забегаем вперед, но вкратце - `Props`-ы нужны для поддержки продвинутых возможностей для создания акторов. Например кластеры, удаленные акторы и т.п. Эти вещи добавляют дополнительную мощность в движок Akka.NET.
 
-#### How do I make `Props`?
-Before we tell you how to make `Props`, let me tell you what NOT to do.
+#### Как мне создать `Props`?
+Прежде, чем мы расскажем как воздавать `Props`-ы, давайте расскажем чего НЕ НАДО делать.
 
-***DO NOT TRY TO MAKE PROPS BY CALLING `new Props(...)`.*** Similar to trying to make an actor by calling `new MyActorClass()`, this is fighting the framework and not letting Akka's `ActorSystem` do its work under the hood to provide safe guarantees about actor restarts and lifecycle management.
+***НЕ ПЫТАЙТЕСЬ ИХ СОЗДАВАТЬ ПРИ ПОМОЩИ `new Props(...)`.*** Это то же самое, что создавать актора через `new MyActorClass()`. Действуя в обход фреймворка, вы лишаетесь всех возожностей `ActorSystem` , а также гарантий по перезапуску актора и управлением его времени жизни.
 
-There are 3 ways to properly create `Props`, and they all involve a call to `Props.Create()`.
+Существует  3 правильных способа создания `Props`, и все они включают вызов `Props.Create()`.
 
-1. **The `typeof` syntax:**
+1. **Синтаксис `typeof`:**
   ```csharp
   Props props1 = Props.Create(typeof(MyActor));
   ```
 
-  While it looks simple, **we recommend that you do not use this approach.** Why? *Because it has no type safety and can easily introduce bugs where everything compiles fine, and then blows up at runtime*.
+  Хоть этот подоход кажется простым, **мы не рекомендуем вам его использовать.** Почему? *Потому что это не типобезопасно. И вы можете получить головную боль, когда все успешно скомпилируется, но грохнется во время выполнения.*.
 
-1. **The lambda syntax**:
+1. **Лябмда-синтаксис**:
   ```csharp
   Props props2 = Props.Create(() => new MyActor(..), "...");
   ```
 
-  This is a mighty fine syntax, and our favorite. You can pass in the arguments required by the constructor of your actor class inline, along with a name.
+  Это простой и мощный вариант, наш любимчик. Вы можете указать как параметры конструктора, так и имя для акотора.
 
-1. **The generic syntax**:
+1. **Параметризированный синтаксис**:
   ```csharp
   Props props3 = Props.Create<MyActor>();
   ```
 
-  Another fine syntax that we whole-heartedly recommend.
+  Еще один подход, который мы можем рекомендовать от всего сердца.
 
-#### How do I use `Props`?
-You actually already know this, and have done it. You pass the `Props`—the actor recipe—to the call to `Context.ActorOf()` and the underlying `ActorSystem` reads the recipe, et voila! Whips you up a fresh new actor.
+#### Как правильно пользоваться `Props`-ами?
+На самом деле вы это уже знаете и неоднократно использовали. Вы передаете `Props`(рецепт по созданию актора) в вызов метода `Context.ActorOf()`. Под капотом `ActorSystem` прочитает этот рецепт и вуаля! Подаст вам свежеприготовленного актора на блюдечке с голубой каемочкой.
 
-Enough of this conceptual business. Let's get to it!
+Но хватит концептуальщины! Пора сделать что-то руками!
 
-## Exercise
-Before we can get into the meat of this lesson (`Props` and `IActorRef`s), we have to do a bit of cleanup.
+## Упражнение
 
-### Phase 1: Move validation into its own actor
-We're going to move all our validation code into its own actor. It really doesn't belong in the `ConsoleReaderActor`. Validation deserves to have its own actor (similar to how you want single-purpose objects in OOP).
+Прежде, чем мы доберемя до самой вкусной части урока, нам необходимо провести небольшую уборку.
 
-#### Create `ValidationActor` class
-Make a new class called `ValidationActor` and put it into its own file. Fill it with all the validation logic that is currently in `ConsoleReaderActor`:
+### Фаза №1: Переносим валидацию в отдельного актора
+Валидация точно не должна находиться в `ConsoleReaderActor`. Каждый объект должен иметь одну зону ответственности, поэтому давайте переносим весь наш код валидации в специально созданного для этих целей актора. 
+
+#### Создаем класс `ValidationActor`
+Создайте новый класс `ValidationActor` в отдельном файел. Перенесите код валидации из `ConsoleReaderActor`:
 
 ```csharp
 // ValidationActor.cs
@@ -195,7 +195,7 @@ namespace WinTail
 }
 ```
 
-### Phase 2: Making `Props`, our actor recipes
+### Фаза №2: Создание `Props`-ов, рецептов по созданию акторов
 Okay, now we can get to the good stuff! We are going to use what we've learned about `Props` and tweak the way we make our actors.
 
 Again, we do not recommend using the `typeof` syntax. For practice, use both of the lambda and generic syntax!
