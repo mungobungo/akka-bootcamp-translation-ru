@@ -196,20 +196,20 @@ namespace WinTail
 ```
 
 ### Фаза №2: Создание `Props`-ов, рецептов по созданию акторов
-Okay, now we can get to the good stuff! We are going to use what we've learned about `Props` and tweak the way we make our actors.
+Так, теперь займемся чем-то полезным! Мы применим наши знания о `Props`-ах и оптимизируем создание акторов.
 
-Again, we do not recommend using the `typeof` syntax. For practice, use both of the lambda and generic syntax!
+Повторяем, мы НЕ рекомендуем ситнаксис с исползованием `typeof`. Лучше используйте лямбды!
 
-> **Remember**: do NOT try to create `Props` by calling `new Props(...)`.
+> **Запомните**: НЕ создавайте `Props` через `new Props(...)`.
 >
-> When you do that, kittens die, unicorns vanish, Mordor wins and all manner of badness happens. Let's just not.
+> Если вы так сделаете, котята умрут мучительной смертью, единороги исчезнут, Мордор победит и случатся всякие бяки. Просто не надо так делать.
 
-In this section, we're going to split out the `Props` objects onto their own lines for easier reading. In practice, we usually inline them into the call to `ActorOf`.
+В этом разделе мы разнесем определение  `Props`  на несколько строк, для того чтобы было проще читать. В боевом коде мы обычно пишем их в одну строку с `ActorOf`.
 
-#### Delete existing `Props` and `IActorRef`s
-In `Main()`, remove your existing actor declarations so we have a clean slate.
+#### Удалите текущие `Props` и`IActorRef`ы
+Уберите все строки, создающие акторов из `Main()`, так мы получим чистое состояние.
 
-Your code should look like this right now:
+Ваш код должен выглядеть следующим образом:
 
 ```csharp
 // Program.cs
@@ -229,27 +229,28 @@ static void Main(string[] args)
 ```
 
 
-#### Make `consoleWriterProps`
-Go to `Program.cs`. Inside of `Main()`, split out `consoleWriterProps` onto its own line like so:
+#### Создайте `consoleWriterProps`
+Перейдите в файл `Program.cs`. Внутри `Main()`, создайте `consoleWriterProps` на отдельной строке:
 
 ```csharp
 // Program.cs
 Props consoleWriterProps = Props.Create(typeof (ConsoleWriterActor));
 ```
 
-Here you can see we're using the typeof syntax, just to show you what it's like. But again, *we do not recommend using the `typeof` syntax in practice*.
+Здесь мы воспользовались typeof-синтаксисом, чтобы показать что так тоже будет работать. Но еще раз *мы НЕ рекомендуем использовать `typeof` на практике*.
 
-Going forward, we'll only use the lambda and generic syntaxes for `Props`.
 
-#### Make `validationActorProps`
-Add this just to `Main()` also:
+Далее по тексту мы будем использовать только лямбды или перегрузки по типам.
+
+#### создаем `validationActorProps`
+добавьте следующий код в`Main()`:
 
 ```csharp
 // Program.cs
 Props validationActorProps = Props.Create(() => new ValidationActor(consoleWriterActor));
 ```
 
-As you can see, here we're using the lambda syntax.
+Здесь, как вы видите мы воспользовались лябмдами.
 
 #### Make `consoleReaderProps`
 Add this just to `Main()` also:
@@ -259,60 +260,59 @@ Add this just to `Main()` also:
 Props consoleReaderProps = Props.Create<ConsoleReaderActor>(validationActor);
 ```
 
-This is the generic syntax. `Props` accepts the actor class as a generic type argument, and then we pass in whatever the actor's constructor needs.
+А здесь используем список шаблонов. `Props` специализируется типом нужного актора, а парамтером передаем необходимые для создания актора данные.
 
-### Phase 3: Making `IActorRef`s using various `Props`
-Great! Now that we've got `Props` for all the actors we want, let's go make some actors!
+### Фаза 3: Получаем `IActorRef`-ы ипользуя разные `Props`-ы
+Теперь у нас есть `Props` для всех акторов, которые нам нужны! Подходящее время для создания этих самых акторов!
 
-Remember: do not try to make an actor by calling `new Actor()` outside of a `Props` object and/or outside the context of the `ActorSystem` or another `IActorRef`. Mordor and all that, remember?
+Помните: не пытайтесь создать актора при поиощи `new Actor()`, вне контекста `ActorSystem` или другого `IActorRef`. Мордор и всякое такое прочее, помните?
 
-#### Make a new `IActorRef` for `consoleWriterActor`
-Add this to `Main()` on the line after `consoleWriterProps`:
+#### Создаем `IActorRef` для `consoleWriterActor`
+Добавьте этот код в `Main()` сразу после `consoleWriterProps`:
 ```csharp
 // Program.cs
 IActorRef consoleWriterActor = MyActorSystem.ActorOf(consoleWriterProps, "consoleWriterActor");
 ```
 
-
-#### Make a new `IActorRef` for `validationActor`
-Add this to `Main()` on the line after `validationActorProps`:
+#### Создаем `IActorRef` для `validationActor`
+Добавьте этот код в `Main()` сразу после `validationActorProps`:
 
 ```csharp
 // Program.cs
 IActorRef validationActor = MyActorSystem.ActorOf(validationActorProps, "validationActor");
 ```
 
-#### Make a new `IActorRef` for `consoleReaderActor`
-Add this to `Main()` on the line after `consoleReaderProps`:
+#### Создаем `IActorRef` для `consoleReaderActor`
+Добавьте этот код в  `Main()` сразу после `consoleReaderProps`:
 
 ```csharp
 // Program.cs
 IActorRef consoleReaderActor = MyActorSystem.ActorOf(consoleReaderProps, "consoleReaderActor");
 ```
 
-#### Calling out a special `IActorRef`: `Sender`
-You may not have noticed it, but we actually are using a special `IActorRef` now: `Sender`. Go look for this in `ValidationActor.cs`:
+#### Используем специальный `IActorRef` -  `Sender` (отправитель)
+Вы могли и не заметить, но в нашей программе мы используем специальный тип `IActorRef` - `Sender`. Загляните в  `ValidationActor.cs`:
 
 ```csharp
-// tell sender to continue doing its thing (whatever that may be, this actor doesn't care)
+// Говорим отправителю, чтоюы он продложал заниматься своими делами
 Sender.Tell(new Messages.ContinueProcessing());
 ```
 
-This is the special `Sender` handle that is made available within an actors `Context` when it is processing a message. The `Context` always makes this reference available, along with some other metadata (more on that later).
+ `Sender` это специальная ссылка внутри  `Context`-а актора, доступная в момет обработки сообщения. Эта ссылка (вместе с парочкой других) всегда доступна через `Context` актора.
 
-### Phase 4: A bit of cleanup
-Just a bit of cleanup since we've changed our class structure. Then we can run our app again!
+### Фаза 4: Подчищаем хвосты
+Немного приберемся после того, как мы изменили структуру наших классов. После этого можно будет запускать нашу программу.
 
-#### Update `ConsoleReaderActor`
-Now that `ValidationActor` is doing our validation work, we should really slim down `ConsoleReaderActor`. Let's clean it up and have it just hand the message off to the `ValidationActor` for validation.
+#### Обновим `ConsoleReaderActor`
+Теперь когда `ValidationActor` занят всей валидацией, `ConsoleReaderActor` значительно упрощается. Давайте будем просто отправлять сообщения `ValidationActor`-у когда нам надо проверить входные данные.
 
-We'll also need to store a reference to `ValidationActor` inside the `ConsoleReaderActor`, and we don't need a reference to the the `ConsoleWriterActor` anymore, so let's do some cleanup.
+Также мы храним ссылку на  `ValidationActor` внутри `ConsoleReaderActor`, а ссылка на `ConsoleWriterActor` нам больше не нужна.
 
-Modify your version of `ConsoleReaderActor` to match the below:
+После всех изменений ваша версия `ConsoleReaderActor` должна выглядеть следующим образом:
 
 ```csharp
 // ConsoleReaderActor.cs
-// removing validation logic and changing store actor references
+// Удаляем логику валидации и подчищаем ссылки на других акторов
 using System;
 using Akka.Actor;
 
@@ -375,40 +375,41 @@ namespace WinTail
 }
 
 ```
+Как можно видеть, мы теперь отправляем весь ввод с консоли напряямую `ValidationActor`.
+ `ConsoleReaderActor` отвечает только за чтение данных с консоли и отправку их на обработку более умному актору.
 
-As you can see, we're now handing off the input from the console to the `ValidationActor` for validation and decisions. `ConsoleReaderActor` is now only responsible for reading from the console and handing the data off to another more sophisticated actor.
-
-#### Fix that first `Props` call...
-We can't very well recommend you not use the `typeof` syntax and then let it stay there. Real quick, go back to `Main()` and update `consoleWriterProps` to be use the generic syntax.
+#### Исправим первый вызов `Props`...
+Мы запрещать вам пользоваться `typeof` для создания акторов, и тем не менее оставлять подобные штуки в коде.  Быстренько, вернитесь в `Main()` и сделайте так, чтобы `consoleWriterProps` создавался при помощи  шаблонов.
 
 ```csharp
 Props consoleWriterProps = Props.Create<ConsoleWriterActor>();
 ```
 
-There. That's better.
+Вооот. Так-то лучше.
 
-### Once you're done
-Compare your code to the solution in the [Completed](Completed/) folder to see what the instructors included in their samples.
+### Когда все готово
+Сравните ваш код с решением в папке [Completed](Completed/), и проверьте наличие дополнительных подсказок в примере.
 
-If everything is working as it should, the output you see should be identical to last time:
+Если все работает как надо, вывод приложения будет примерно следующим:
 ![Petabridge Akka.NET Bootcamp Lesson 1.2 Correct Output](Images/working_lesson3.jpg)
 
 
-#### Experience the danger of the `typeof` syntax for `Props` yourself
-Since we harped on it earlier, let's illustrate the risk of using the `typeof` `Props` syntax and why we avoid it.
+#### Почувствуйте опасность `typeof` на собственной шкуре
 
-We've left a little landmine as a demonstration. You should blow it up just to see what happens.
+Поскольку мы часто говорили об этом раньше, вот причина, почему пользоваться  `typeof` для создания `Props` очень рискованно.
 
-1. Open up [Completed/Program.cs](Completed/Program.cs).
-1. Find the lines containing `fakeActorProps` and `fakeActor` (should be around line 18).
-2. Uncomment these lines.
-	- Look at what we're doing here—intentionally substituting a non-actor class into a `Props` object! Ridiculous! Terrible!
-	- While this is an unlikely and frankly ridiculous example, that is exactly the point. It's just leaving open the door for mistakes, even with good intentions.
-1. Build the solution. Watch with horror as this ridiculous piece of code *compiles without error!*
-1. Run the solution.
-1. Try to shield yourself from everything melting down when your program reaches that line of code.
+В нашем примене заложена необольшая бомба. Вам предстоит ее взорвать и посмотреть что получится.
 
-Okay, so what was the point of that? Contrived as that example was, it should show you that *using the `typeof` syntax for `Props` has no type safety and is best avoided unless you have a damn good reason to use it.*
+1. Откройте [Completed/Program.cs](Completed/Program.cs).
+1. Найдите строки с `fakeActorProps` и `fakeActor` (должны быть в районе 18-й строки ).
+2. Раскомментируйте эти строки.
+	- Посмотрите что мы делам! Мы предаем в `Props` не класс актора, а обычный объект! Глупо! Ужасно!
+	- Несмотря на то что пример выглядит искуственным, он отлично демонстрирует пробдему. Вы открываете дверь возможным ошибкам, несмотря на ваши хорошие намерения.
+1. Скомпилируйте приложение. Посмотрите как этот ужасный кусок кода *скомпилируется без ошибок!*
+1. Запустите приложение.
+1. Попытайтесь защититься от осколков, когда ваша программа доберется до той злополучной строчки.
+
+Ладненько, в чем был смысл всего этого действа? Несмотря на абсурдность примера, вы теперь знаете, что *надо избегать `typeof` при создании `Props`. *
 
 
 ## Отличная работа! Переходим к уроку №4 !
