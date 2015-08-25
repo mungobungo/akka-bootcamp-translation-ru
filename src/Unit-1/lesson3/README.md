@@ -1,43 +1,45 @@
-# Lesson 1.3: `Props` and `IActorRef`s
-In this lesson, we will review/reinforce the different ways you can create actors and send them messages. This lesson is more conceptual and has less coding for you to do, but it's an essential foundation and key to understanding the code you will see down the line.
+# Урок 1.3: `Props` и `IActorRef`ы
 
-In this lesson, the code has changed a bit. The change is that the `ConsoleReaderActor` no longer does any validation work, but instead, just passes off the messages it receives from the console to another actor for validation (the `ValidationActor`).
+На этом уроке мы более подробно разберем различные способы, которыми можно отправить сообщения. Этот урок больше концептуальный, поэтому много кода писать не придется. Но он чрезвычайно важен и дает понимание ключевых идей, с которыми вы столкнетесь позже. 
 
-## Key concepts / background
-### `IActorRef`s
-#### What is an `IActorRef`?
-An [`IActorRef`](http://api.getakka.net/docs/stable/html/56C46846.htm "Akka.NET Stable API Docs - IActorRef") is a reference or handle to an actor. The purpose of an `IActorRef` is to support sending messages to an actor through the `ActorSystem`. You never talk directly to an actor—you send messages to its `IActorRef` and the `ActorSystem` takes care of delivering those messages for you.
+Мы немного изменим нашу программу. Изменения будут касаться `ConsoleReaderActor`. Ему больше не придется заниматься валидацеи. Вместо этого он будет пересылать собщения другому актору, который теперь отвечает за валидацию (а именно- `ValidationActor`). 
 
-#### WTF? I don't actually talk to my actors? Why not?
-You do talk to them, just not directly :) You have to talk to them via the intermediary of the `ActorSystem`.
+## Ключевые идеи / общая информация
+### `IActorRef`ы
+#### Что такое `IActorRef`?
+Вообще говоря [`IActorRef`](http://api.getakka.net/docs/stable/html/56C46846.htm "Akka.NET Stable API Docs - IActorRef") это ссылка на актора. Цель `IActorRef`-а обеспечение поддержки отправки сообщений между акторами через `ActorSystem`. Вы никогда не общаетесь с актором напрямую. Вы посылаете сообщение `IActorRef`-у нужного актора и `ActorSystem` позаботится о доставке вашего сообщения.
 
-Here are two of the reasons why it is an advantage to send messages to an `IActorRef` and let the underlying `ActorSystem` do the work of getting the messages to the actual actor.
-  - It gives you better information to work with and messaging semantics. The `ActorSystem` wraps all messages in an `Envelope` that contains metadata about the message. This metadata is automatically unpacked and made available in the context of your actor.
-  - It allows "location transparency": this is a fancy way of saying that you don't have to worry about which process or machine your actor lives in. Keeping track of all this is the system's job. This is essential for allowing remote actors, which is how you can scale an actor system up to handle massive amounts of data (e.g. have it work on multiple machines in a cluster). More on this later.
+#### Какого? Я не могу общаться со своими акторами? Почему это вдруг?
+Вы можете общаться с ними, только не напрямую :) Вы должны говорить с ними через посредника в виде `ActorSystem`.
 
-#### How do I know my message got delivered to the actor?
-For now, this is not something you should worry about. The underlying `ActorSystem` of Akka.NET itself provides mechanisms to guarantee this, but `GuaranteedDeliveryActors` are an advanced topic.
+Вот вам пара причин, почему стоит посылать сообщения через `IActorRef`, и позволить `ActorSystem` выполнять работу по доставке сообщений до нужного актора.
+  - Вы получаете дополнительную информацию о семантике сообщений. `ActorSystem` оборачивает все сообщения в конверт(`Envelope`)который содержит метаданные сообщения. Эти метаданные автоматически распаковываются и становятся доступны в контексте вашего актора.
+  - Вы получаете "прозрачность местоположения": вам не надо беспокоиться на какой машине в сети запущен ваш актор. Заботиться об этом - задача системы. Это просто необходимо для удаленных аткоров, при помощи которых вы можете масштабировать вашу систему акторов для обработки больших объемов данных. (например можно сделать кластер из акторов, работающих на нескольких машинах). 
 
-For now, just trust that delivering messages is the `ActorSystem`s job, not yours. Trust, baby. :)
+#### Как я знаю, что сообщение доставлено актору?
+На данный момент вам не стоит беспокоиться об этом. Низкоуровневая  `ActorSystem` входящая в состав Akka.NET обеспечивает механизм подобной доставки. Но  акторы с гарантией доставки (`GuaranteedDeliveryActors`) это более продвинутая тема, которую мы разберем позже.
 
-#### Okay, fine, I'll let the system deliver my messages. So how do I get an `IActorRef`?
-There are two ways to get an `IActorRef`.
+Сейсас просто поверьте, что доставлять сообщения это работа для `ActorSystem`, а не для вас. Вера двигает горы :)
 
-##### 1) Create the actor
-Actors form intrinsic supervision hierarchies (we cover in detail in lesson 5). This means there are "top level" actors, which essentially report directly to the `ActorSystem` itself, and there are "child" actors, which report to other actors.
+#### ммм...ладненько, пусть система занимается доставкой сообщений. Так как вы говорите получить `IActorRef`?
+Есть два основных способа получения `IActorRef`.
 
-To make an actor, you have to create it from its context. And **you've already done this!** Remember this?
+##### 1) Создание актора
+Акторы формируют иерархию супревизоров (мы разберемся с этим на уроке №5) . Это означает что существуют акторы "верхнего уровня",  которые отчитываются напрямую перед системой `ActorSystem`, а есть дочерние акторы, которые отчитываются перед другими акторами.
+
+Чтобы создать актора, вы должны воплпользоваться конекстом. А **это вы уже  делали!** Припоминаете?
 ```csharp
-// assume we have an existing actor system, "MyActorSystem"
+// предположим, что система акторов "MyActorSystem" была создана ранее
 IActorRef myFirstActor = MyActorSystem.ActorOf(Props.Create(() => new MyActorClass()), "myFirstActor")
 ```
 
-As shown in the above example, you create an actor in the context of the actor that will supervise it (almost always). When you create the actor on the `ActorSystem` directly (as above), it is a top-level actor.
+Как показано в примере выше, вы содаете актора в контексте другого актора, который будет супервизором(почти всегда). Когда вы создаете актора напрямую в `ActorSystem`, это актор верхнего уровня.
 
-You make child actors the same way, except you create them from another actor, like so:
+Вы создаете дочерних акторов подобным образом. Вы просто делаете это изнутри другого актора.
+Что-то вроде этого:
 ```csharp
-// have to create the child actor somewhere inside myFirstActor
-// usually happens inside OnReceive or PreStart
+// создаем дочернего актора где-то в глубине myFirstActor
+// Обычно это делается в методах OnReceive или PreStart
 class MyActorClass : UntypedActor{
 	protected override void PreStart(){
 		IActorRef myFirstChildActor = Context.ActorOf(Props.Create(() => new MyChildActorClass()), "myFirstChildActor")
@@ -45,92 +47,92 @@ class MyActorClass : UntypedActor{
 }
 ```
 
-**\*CAUTION***: Do NOT call `new MyActorClass()` outside of `Props` and the `ActorSystem` to make an actor. We can't go into all the details here, but essentially, by doing so you're trying to create an actor outside the context of the `ActorSystem`. This will produce a completely unusable, undesirable object.
+**\*ОСТОРОЖНО***: НЕ создавайте актора при помощи `new MyActorClass()`. Всегда пользуйтесь услугами `Props` и `ActorSystem` для создания акторов. Мы не будем сильно углубляться, но поступая так, актор будет создан вне контекста `ActorSystem`. И этот актор будет бесполезным объектом, который никто не сможет нормально исопльзовать.
 
 
-##### 2) Look up the actor
-All actors have an address (technically, an `ActorPath`) which represents where they are in the system hierarchy, and you can get a handle to them (get their `IActorRef`) by looking them up by their address.
+##### 2) Поиск актора
+У всех акторов есть адрес (технически, за это отвечает класс `ActorPath`) который описывает их место в иерархии. Вы можете получыить ссылку на них (`IActorRef`) используя соответствующий адрес.
 
-We will cover this in much more detail in the next lesson.
+Подробнее об этом на следующем уроке.
 
-#### Do I have to name my actors?
-You may have noticed that we passed names into the `ActorSystem` when we were creating the above actors:
+#### Надо ли давать акторам имена?
+Вы могли заметить, что когда мы создавали акторов, мы передавали имена в `ActorSystem`:
 ```csharp
-// last arg to the call to ActorOf() is a name
+// последний аргумент метода ActorOf() это имя
 IActorRef myFirstActor = MyActorSystem.ActorOf(Props.Create(() => new MyActorClass()), "myFirstActor")
 ```
 
-This name is not required. It is perfectly valid to create an actor without a name, like so:
+Давать актору имя необязательно. Можно абсолютно спокойно создавать безымянных акторов, например так:
 ```csharp
-// last arg to the call to ActorOf() is a name
+// в этот раз имя не передаем 
 IActorRef myFirstActor = MyActorSystem.ActorOf(Props.Create(() => new MyActorClass()))
 ```
 
-That said, **the best practice is to name your actors**. Why? Because the name of your actor is used in log messages and in identifying actors. Get in the habit, and your future self will thank you when you have to debug something and it has a nice label on it :)
+НО, **правило хорошего тона - давать акторам осмысленные имена**. Почему?  Потому что имя актора используется для логирования собщеий, а также для идентификации акторов. Приобретите эту полезную привычку, и вы в будущем будете счастлиыв, когда придется отлаживать что-то, что имеет четкое имя и хорошо видно в логах :)
 
-#### Are there different types of `IActorRef`s?
-Actually, yes. The most common, by far, is just a plain-old `IActorRef` or handle to an actor, as above.
+#### Существуют ли различные типы `IActorRef`-ов?
+Строго говоря, да. Но в большинстве случаев, это просто старый добрый `IActorRef`.
 
-However, there are also some other `IActorRef`s available to you within the context of an actor. As we said, all actors have a context. That context holds metadata, which includes information  about the current message being processed. That information includes things like the `Parent` or `Children` of the current actor, as well as the `Sender` of the current message.
+Однако в рамках конекста актора, доступны другие `IActorRef`-ы. Как мы говорили ранее, у всех акторов есть конекст. В этом контексте содержатся метаданные, которые включают в себя информацию о сообщении, которое обрабатывается в данный момент. Эта информация включает в себя вещи вроде родителя и детей текущего актора (свойства `Parent` и `Children` соответственно). Также вы можете получить ссылку на отправителя сообщения (`Sender`).
 
-`Parent`, `Children`, and `Sender` all provide `IActorRef`s that you can use.
+`Parent`, `Children`, и `Sender` это обычные `IActorRef`-ы, которые можно использовать в ваших программах.
 
-### Props
-#### What are `Props`?
-Think of [`Props`](http://api.getakka.net/docs/stable/html/CA4B795B.htm "Akka.NET Stable API Documentation - Props class") as a recipe for making an actor. Technically, `Props` is a configuration class that encapsulates all the information needed to make an instance of a given type of actor.
+### Props-ы
+#### Что такое `Props`?
+Думайте о [`Props`](http://api.getakka.net/docs/stable/html/CA4B795B.htm "Akka.NET Stable API Documentation - Props class") как о рецепте создания актора. Технически, `Props` это конфигурационный класс, который содержит в себе всю информацию, необоходимую для создания экземпляра актора определенного типа.
 
-#### Why do we need `Props`?
-`Props` objects are shareable recipes for creating an instance of an actor. `Props` get passed to the `ActorSystem` to generate an actor for your use.
+#### Зачем нужны `Props`-ы?
+`Props` это рецепты по созданию акторов. `Props`-ы передаются в `ActorSystem`, для того чтобы создать актора нужного типа .
 
-Right now, `Props` probably feels like overkill. (If so, no worries.) But here's the deal.
+На данный момент, вам может показаться, что использовние `Props`-ов приносит больше головной боли чем пользы. (Если вам действительно так кажется, не беспокойтесь.) Но вот в чем дело.
 
-The most basic `Props`, like we've seen, seem to only include the ingredients needed to make an actor—it's class and required args to its constructor.
+До сих пор, все `Props`-ы, которые мы видели, включали в себя только ингридиенты в виде типа актора и параметров для конструктора.
+НО, вы еще не видели, как `Props`-ы можно расширить информацие об удаленном развертывании актора, и другими конфигурационными параметрами. Например, `Props`-ы являются сериализируемымы сущностями, так что их можно использовать для того, чтобы удаленно создавать и развертывать группы акторов, на другой машине на противоположном участке сети!
 
-BUT, what you haven't seen yet is that `Props` get extended to contain deployment information and other configuration details that are needed to do remote work. For example, `Props` are serializable, so they can be used to remotely create and deploy entire groups of actors on another machine somewhere on the network!
+Мы сильно забегаем вперед, но вкратце - `Props`-ы нужны для поддержки продвинутых возможностей для создания акторов. Например кластеры, удаленные акторы и т.п. Эти вещи добавляют дополнительную мощность в движок Akka.NET.
 
-That's getting way ahead of ourselves though, but the short answer is that we need `Props` to support a lot of the advanced features (clustering, remote actors, etc) that give Akka.NET the serious horsepower which makes it interesting.
+#### Как мне создать `Props`?
+Прежде, чем мы расскажем как воздавать `Props`-ы, давайте расскажем чего НЕ НАДО делать.
 
-#### How do I make `Props`?
-Before we tell you how to make `Props`, let me tell you what NOT to do.
+***НЕ ПЫТАЙТЕСЬ ИХ СОЗДАВАТЬ ПРИ ПОМОЩИ `new Props(...)`.*** Это то же самое, что создавать актора через `new MyActorClass()`. Действуя в обход фреймворка, вы лишаетесь всех возожностей `ActorSystem` , а также гарантий по перезапуску актора и управлением его времени жизни.
 
-***DO NOT TRY TO MAKE PROPS BY CALLING `new Props(...)`.*** Similar to trying to make an actor by calling `new MyActorClass()`, this is fighting the framework and not letting Akka's `ActorSystem` do its work under the hood to provide safe guarantees about actor restarts and lifecycle management.
+Существует  3 правильных способа создания `Props`, и все они включают вызов `Props.Create()`.
 
-There are 3 ways to properly create `Props`, and they all involve a call to `Props.Create()`.
-
-1. **The `typeof` syntax:**
+1. **Синтаксис `typeof`:**
   ```csharp
   Props props1 = Props.Create(typeof(MyActor));
   ```
 
-  While it looks simple, **we recommend that you do not use this approach.** Why? *Because it has no type safety and can easily introduce bugs where everything compiles fine, and then blows up at runtime*.
+  Хоть этот подоход кажется простым, **мы не рекомендуем вам его использовать.** Почему? *Потому что это не типобезопасно. И вы можете получить головную боль, когда все успешно скомпилируется, но грохнется во время выполнения.*.
 
-1. **The lambda syntax**:
+1. **Лябмда-синтаксис**:
   ```csharp
   Props props2 = Props.Create(() => new MyActor(..), "...");
   ```
 
-  This is a mighty fine syntax, and our favorite. You can pass in the arguments required by the constructor of your actor class inline, along with a name.
+  Это простой и мощный вариант, наш любимчик. Вы можете указать как параметры конструктора, так и имя для акотора.
 
-1. **The generic syntax**:
+1. **Параметризированный синтаксис**:
   ```csharp
   Props props3 = Props.Create<MyActor>();
   ```
 
-  Another fine syntax that we whole-heartedly recommend.
+  Еще один подход, который мы можем рекомендовать от всего сердца.
 
-#### How do I use `Props`?
-You actually already know this, and have done it. You pass the `Props`—the actor recipe—to the call to `Context.ActorOf()` and the underlying `ActorSystem` reads the recipe, et voila! Whips you up a fresh new actor.
+#### Как правильно пользоваться `Props`-ами?
+На самом деле вы это уже знаете и неоднократно использовали. Вы передаете `Props`(рецепт по созданию актора) в вызов метода `Context.ActorOf()`. Под капотом `ActorSystem` прочитает этот рецепт и вуаля! Подаст вам свежеприготовленного актора на блюдечке с голубой каемочкой.
 
-Enough of this conceptual business. Let's get to it!
+Но хватит концептуальщины! Пора сделать что-то руками!
 
-## Exercise
-Before we can get into the meat of this lesson (`Props` and `IActorRef`s), we have to do a bit of cleanup.
+## Упражнение
 
-### Phase 1: Move validation into its own actor
-We're going to move all our validation code into its own actor. It really doesn't belong in the `ConsoleReaderActor`. Validation deserves to have its own actor (similar to how you want single-purpose objects in OOP).
+Прежде, чем мы доберемя до самой вкусной части урока, нам необходимо провести небольшую уборку.
 
-#### Create `ValidationActor` class
-Make a new class called `ValidationActor` and put it into its own file. Fill it with all the validation logic that is currently in `ConsoleReaderActor`:
+### Фаза №1: Переносим валидацию в отдельного актора
+Валидация точно не должна находиться в `ConsoleReaderActor`. Каждый объект должен иметь одну зону ответственности, поэтому давайте переносим весь наш код валидации в специально созданного для этих целей актора. 
+
+#### Создаем класс `ValidationActor`
+Создайте новый класс `ValidationActor` в отдельном файел. Перенесите код валидации из `ConsoleReaderActor`:
 
 ```csharp
 // ValidationActor.cs
@@ -193,21 +195,21 @@ namespace WinTail
 }
 ```
 
-### Phase 2: Making `Props`, our actor recipes
-Okay, now we can get to the good stuff! We are going to use what we've learned about `Props` and tweak the way we make our actors.
+### Фаза №2: Создание `Props`-ов, рецептов по созданию акторов
+Так, теперь займемся чем-то полезным! Мы применим наши знания о `Props`-ах и оптимизируем создание акторов.
 
-Again, we do not recommend using the `typeof` syntax. For practice, use both of the lambda and generic syntax!
+Повторяем, мы НЕ рекомендуем ситнаксис с исползованием `typeof`. Лучше используйте лямбды!
 
-> **Remember**: do NOT try to create `Props` by calling `new Props(...)`.
+> **Запомните**: НЕ создавайте `Props` через `new Props(...)`.
 >
-> When you do that, kittens die, unicorns vanish, Mordor wins and all manner of badness happens. Let's just not.
+> Если вы так сделаете, котята умрут мучительной смертью, единороги исчезнут, Мордор победит и случатся всякие бяки. Просто не надо так делать.
 
-In this section, we're going to split out the `Props` objects onto their own lines for easier reading. In practice, we usually inline them into the call to `ActorOf`.
+В этом разделе мы разнесем определение  `Props`  на несколько строк, для того чтобы было проще читать. В боевом коде мы обычно пишем их в одну строку с `ActorOf`.
 
-#### Delete existing `Props` and `IActorRef`s
-In `Main()`, remove your existing actor declarations so we have a clean slate.
+#### Удалите текущие `Props` и`IActorRef`ы
+Уберите все строки, создающие акторов из `Main()`, так мы получим чистое состояние.
 
-Your code should look like this right now:
+Ваш код должен выглядеть следующим образом:
 
 ```csharp
 // Program.cs
@@ -227,27 +229,28 @@ static void Main(string[] args)
 ```
 
 
-#### Make `consoleWriterProps`
-Go to `Program.cs`. Inside of `Main()`, split out `consoleWriterProps` onto its own line like so:
+#### Создайте `consoleWriterProps`
+Перейдите в файл `Program.cs`. Внутри `Main()`, создайте `consoleWriterProps` на отдельной строке:
 
 ```csharp
 // Program.cs
 Props consoleWriterProps = Props.Create(typeof (ConsoleWriterActor));
 ```
 
-Here you can see we're using the typeof syntax, just to show you what it's like. But again, *we do not recommend using the `typeof` syntax in practice*.
+Здесь мы воспользовались typeof-синтаксисом, чтобы показать что так тоже будет работать. Но еще раз *мы НЕ рекомендуем использовать `typeof` на практике*.
 
-Going forward, we'll only use the lambda and generic syntaxes for `Props`.
 
-#### Make `validationActorProps`
-Add this just to `Main()` also:
+Далее по тексту мы будем использовать только лямбды или перегрузки по типам.
+
+#### создаем `validationActorProps`
+добавьте следующий код в`Main()`:
 
 ```csharp
 // Program.cs
 Props validationActorProps = Props.Create(() => new ValidationActor(consoleWriterActor));
 ```
 
-As you can see, here we're using the lambda syntax.
+Здесь, как вы видите мы воспользовались лябмдами.
 
 #### Make `consoleReaderProps`
 Add this just to `Main()` also:
@@ -257,60 +260,59 @@ Add this just to `Main()` also:
 Props consoleReaderProps = Props.Create<ConsoleReaderActor>(validationActor);
 ```
 
-This is the generic syntax. `Props` accepts the actor class as a generic type argument, and then we pass in whatever the actor's constructor needs.
+А здесь используем список шаблонов. `Props` специализируется типом нужного актора, а парамтером передаем необходимые для создания актора данные.
 
-### Phase 3: Making `IActorRef`s using various `Props`
-Great! Now that we've got `Props` for all the actors we want, let's go make some actors!
+### Фаза 3: Получаем `IActorRef`-ы ипользуя разные `Props`-ы
+Теперь у нас есть `Props` для всех акторов, которые нам нужны! Подходящее время для создания этих самых акторов!
 
-Remember: do not try to make an actor by calling `new Actor()` outside of a `Props` object and/or outside the context of the `ActorSystem` or another `IActorRef`. Mordor and all that, remember?
+Помните: не пытайтесь создать актора при поиощи `new Actor()`, вне контекста `ActorSystem` или другого `IActorRef`. Мордор и всякое такое прочее, помните?
 
-#### Make a new `IActorRef` for `consoleWriterActor`
-Add this to `Main()` on the line after `consoleWriterProps`:
+#### Создаем `IActorRef` для `consoleWriterActor`
+Добавьте этот код в `Main()` сразу после `consoleWriterProps`:
 ```csharp
 // Program.cs
 IActorRef consoleWriterActor = MyActorSystem.ActorOf(consoleWriterProps, "consoleWriterActor");
 ```
 
-
-#### Make a new `IActorRef` for `validationActor`
-Add this to `Main()` on the line after `validationActorProps`:
+#### Создаем `IActorRef` для `validationActor`
+Добавьте этот код в `Main()` сразу после `validationActorProps`:
 
 ```csharp
 // Program.cs
 IActorRef validationActor = MyActorSystem.ActorOf(validationActorProps, "validationActor");
 ```
 
-#### Make a new `IActorRef` for `consoleReaderActor`
-Add this to `Main()` on the line after `consoleReaderProps`:
+#### Создаем `IActorRef` для `consoleReaderActor`
+Добавьте этот код в  `Main()` сразу после `consoleReaderProps`:
 
 ```csharp
 // Program.cs
 IActorRef consoleReaderActor = MyActorSystem.ActorOf(consoleReaderProps, "consoleReaderActor");
 ```
 
-#### Calling out a special `IActorRef`: `Sender`
-You may not have noticed it, but we actually are using a special `IActorRef` now: `Sender`. Go look for this in `ValidationActor.cs`:
+#### Используем специальный `IActorRef` -  `Sender` (отправитель)
+Вы могли и не заметить, но в нашей программе мы используем специальный тип `IActorRef` - `Sender`. Загляните в  `ValidationActor.cs`:
 
 ```csharp
-// tell sender to continue doing its thing (whatever that may be, this actor doesn't care)
+// Говорим отправителю, чтоюы он продложал заниматься своими делами
 Sender.Tell(new Messages.ContinueProcessing());
 ```
 
-This is the special `Sender` handle that is made available within an actors `Context` when it is processing a message. The `Context` always makes this reference available, along with some other metadata (more on that later).
+ `Sender` это специальная ссылка внутри  `Context`-а актора, доступная в момет обработки сообщения. Эта ссылка (вместе с парочкой других) всегда доступна через `Context` актора.
 
-### Phase 4: A bit of cleanup
-Just a bit of cleanup since we've changed our class structure. Then we can run our app again!
+### Фаза 4: Подчищаем хвосты
+Немного приберемся после того, как мы изменили структуру наших классов. После этого можно будет запускать нашу программу.
 
-#### Update `ConsoleReaderActor`
-Now that `ValidationActor` is doing our validation work, we should really slim down `ConsoleReaderActor`. Let's clean it up and have it just hand the message off to the `ValidationActor` for validation.
+#### Обновим `ConsoleReaderActor`
+Теперь когда `ValidationActor` занят всей валидацией, `ConsoleReaderActor` значительно упрощается. Давайте будем просто отправлять сообщения `ValidationActor`-у когда нам надо проверить входные данные.
 
-We'll also need to store a reference to `ValidationActor` inside the `ConsoleReaderActor`, and we don't need a reference to the the `ConsoleWriterActor` anymore, so let's do some cleanup.
+Также мы храним ссылку на  `ValidationActor` внутри `ConsoleReaderActor`, а ссылка на `ConsoleWriterActor` нам больше не нужна.
 
-Modify your version of `ConsoleReaderActor` to match the below:
+После всех изменений ваша версия `ConsoleReaderActor` должна выглядеть следующим образом:
 
 ```csharp
 // ConsoleReaderActor.cs
-// removing validation logic and changing store actor references
+// Удаляем логику валидации и подчищаем ссылки на других акторов
 using System;
 using Akka.Actor;
 
@@ -373,50 +375,53 @@ namespace WinTail
 }
 
 ```
+Как можно видеть, мы теперь отправляем весь ввод с консоли напряямую `ValidationActor`.
+ `ConsoleReaderActor` отвечает только за чтение данных с консоли и отправку их на обработку более умному актору.
 
-As you can see, we're now handing off the input from the console to the `ValidationActor` for validation and decisions. `ConsoleReaderActor` is now only responsible for reading from the console and handing the data off to another more sophisticated actor.
-
-#### Fix that first `Props` call...
-We can't very well recommend you not use the `typeof` syntax and then let it stay there. Real quick, go back to `Main()` and update `consoleWriterProps` to be use the generic syntax.
+#### Исправим первый вызов `Props`...
+Мы запрещать вам пользоваться `typeof` для создания акторов, и тем не менее оставлять подобные штуки в коде.  Быстренько, вернитесь в `Main()` и сделайте так, чтобы `consoleWriterProps` создавался при помощи  шаблонов.
 
 ```csharp
 Props consoleWriterProps = Props.Create<ConsoleWriterActor>();
 ```
 
-There. That's better.
+Вооот. Так-то лучше.
 
-### Once you're done
-Compare your code to the solution in the [Completed](Completed/) folder to see what the instructors included in their samples.
+### Когда все готово
+Сравните ваш код с решением в папке [Completed](Completed/), и проверьте наличие дополнительных подсказок в примере.
 
-If everything is working as it should, the output you see should be identical to last time:
+Если все работает как надо, вывод приложения будет примерно следующим:
 ![Petabridge Akka.NET Bootcamp Lesson 1.2 Correct Output](Images/working_lesson3.jpg)
 
 
-#### Experience the danger of the `typeof` syntax for `Props` yourself
-Since we harped on it earlier, let's illustrate the risk of using the `typeof` `Props` syntax and why we avoid it.
+#### Почувствуйте опасность `typeof` на собственной шкуре
 
-We've left a little landmine as a demonstration. You should blow it up just to see what happens.
+Поскольку мы часто говорили об этом раньше, вот причина, почему пользоваться  `typeof` для создания `Props` очень рискованно.
 
-1. Open up [Completed/Program.cs](Completed/Program.cs).
-1. Find the lines containing `fakeActorProps` and `fakeActor` (should be around line 18).
-2. Uncomment these lines.
-	- Look at what we're doing here—intentionally substituting a non-actor class into a `Props` object! Ridiculous! Terrible!
-	- While this is an unlikely and frankly ridiculous example, that is exactly the point. It's just leaving open the door for mistakes, even with good intentions.
-1. Build the solution. Watch with horror as this ridiculous piece of code *compiles without error!*
-1. Run the solution.
-1. Try to shield yourself from everything melting down when your program reaches that line of code.
+В нашем примене заложена необольшая бомба. Вам предстоит ее взорвать и посмотреть что получится.
 
-Okay, so what was the point of that? Contrived as that example was, it should show you that *using the `typeof` syntax for `Props` has no type safety and is best avoided unless you have a damn good reason to use it.*
+1. Откройте [Completed/Program.cs](Completed/Program.cs).
+1. Найдите строки с `fakeActorProps` и `fakeActor` (должны быть в районе 18-й строки ).
+2. Раскомментируйте эти строки.
+	- Посмотрите что мы делам! Мы предаем в `Props` не класс актора, а обычный объект! Глупо! Ужасно!
+	- Несмотря на то что пример выглядит искуственным, он отлично демонстрирует пробдему. Вы открываете дверь возможным ошибкам, несмотря на ваши хорошие намерения.
+1. Скомпилируйте приложение. Посмотрите как этот ужасный кусок кода *скомпилируется без ошибок!*
+1. Запустите приложение.
+1. Попытайтесь защититься от осколков, когда ваша программа доберется до той злополучной строчки.
 
-## Great job! Onto Lesson 4!
-Awesome work! Well done on completing your this lesson. It was a big one.
+Ладненько, в чем был смысл всего этого действа? Несмотря на абсурдность примера, вы теперь знаете, что *надо избегать `typeof` при создании `Props`. *
 
-**Let's move onto [Lesson 4 - Child Actors, Actor Hierarchies, and Supervision](../lesson4).**
 
-## Any questions?
-**Don't be afraid to ask questions** :).
+## Отличная работа! Переходим к уроку №4 !
+Ухх, это было непросто!
 
-Come ask any questions you have, big or small, [in this ongoing Bootcamp chat with the Petabridge & Akka.NET teams](https://gitter.im/petabridge/akka-bootcamp).
+**Переходим к  [Уроку 4 - Дочерние акторы, иерархия акторов и супервизоры](../lesson4).**
 
-### Problems with the code?
-If there is a problem with the code running, or something else that needs to be fixed in this lesson, please [create an issue](https://github.com/petabridge/akka-bootcamp/issues) and we'll get right on it. This will benefit everyone going through Bootcamp.
+## Есть вопросы?
+**Не стесняйтесь задавать вопроосы** :).
+
+
+Можете задавать любые вопросы, большие и маленькие, [в этом чате команд Petabridge и Akka.NET (английский)](https://gitter.im/petabridge/akka-bootcamp).
+
+### Проблемы с кодом?
+Если у вас возникил проблемы с запуском кода или чем-то другим, что необходимо починить в уроке, пожалуйста, [создайте issue](https://github.com/petabridge/akka-bootcamp/issues) и мы это пофиксим. Таким образом вы поможете всем кто будет проходить эту обучалку.
