@@ -1,24 +1,29 @@
-# Lesson 1.2: Defining and Handling Messages
-In this lesson, you will make your own message types and use learn how to control processing flow within your actors based on your custom messages. Doing so will teach you the fundamentals of communicating in a message- and event-driven manner within your actor system.
+# Урок 1.2: Создание и обработка сообщений
 
-This lesson picks up right where Lesson 1 left off, and continues extending our budding systems of console actors. In addition to defining our own messages, we'll also add some simple validation for the input we enter and take action based on the results of that validation.
+На этом уроке вы создадите свои собственные сообщения разных типов и научитесь контролировать процесс обработки их акторами. Таким образом вы познакомитесь с основами обмена информацией при помощи сообщеий  а также событийно-ориентированным подходом в рамках системы акторов.
 
-## Key concepts / background
-### What is a message?
-Any POCO can be a message. A message can be a `string`, a value like `int`, a type, an object that implements an interface... whatever you want.
 
-That being said, the recommended approach is to make your own custom messages into semantically named classes, and to encapsulate any state you want inside those classes (e.g. store a `Reason` inside a `ValidationFailed` class... hint, hint...).
+Этот урок стартует в том месте, где мы завершили урок номер 1. Мы продложим расширять функционоальные возможности наших консольных акторов. Помимо определения собственных сообщений, мы также добавим доплнительную валидацию вводимых данных, на основе которой будем предпринимать различные действия.
 
-### How do I send an actor a message?
-As you saw in the first lesson, you `Tell()` the actor the message.
 
-### How do I handle a message?
-This is entirely up to you, and doesn't really have much to do with Akka.NET. You can handle (or not handle) a message as you choose within an actor.
+## Ключевые идеи / общая информация
+### Что такое сообщение?
+Любой C# объект может быть сообщением. Сообщение можем иметь тип `string`, быть `int`-овым значением, типом, объектом реализцющим интерфейс... быть всем чем угодно.
 
-### What happens if my actor receives a message it doesn't know how to handle?
-Actors ignore messages they don't know how to handle. Whether or not this ignored message is logged as such depends on the type of actor.
+Несмотря на полную свободу в определении сообщений, рекомендуемый подоход это создавать собственные сообщения внутри классов, которые обрабатывают эти сообщения. Также постарайтесь инкапсулировать любое состояние внутри этих классов (например сохраните причину ошибки валидации в поле `Reason` класса `ValidationFailed`... подсказка, подсказка)
 
-With an `UntypedActor`, unhandled messages are not logged as unhandled unless you manually mark them as such, like so:
+### Как я могу отослать сообщение актору?
+Как вы уже успели увидеть в первом уроке, достаточно использовать `Tell()` для отправки сообщений.
+
+### Как мне обработать сообщение?
+
+Это полностью зависит от вас. И практически никак не связано с Akka.NET. Вы можете обработать (или не обработать) сообщение которые вы получили в акторе.
+
+### Что будет, если мой актор получит сообщение, которе не знает как обрабатывать?
+
+Акторы игнорируют те сообщения, которые не знают как обрабатывать. Попадет ли это сообщение в лог зависит от типа актора.
+
+Если использовать `UntypedActor`, необработанные сообщения не будут записаны в лог, только если вы явно не пометите их вроде такого:
 
 ```csharp
 
@@ -40,22 +45,24 @@ class MyActor : UntypedActor
 }
 ```
 
-However, in a `ReceiveActor`—which we cover in Unit 2—unhandled messages are automatically sent to `Unhandled` so the logging is done for you.
+Однако при использовании `ReceiveActor`, с которым мы разберемся в блоке 2, для необработанных сообщений автоматически вызывается  `Unhandled`, так что отправка в лог будет сделана автовматически..
 
-### How do my actors respond to messages?
-This is up to you - you can respond by simply processing the message, replying to the `Sender`, forwarding the message onto another actor, or doing nothing at all.
+### Как актор может ответить на сообщение?
+Как захотите - вы можете ответить простой обработкой сообщения, отсылкой ответа `Sender`-у, пересылкой сообщения другому актору, а можете вообще ничего не делать.
 
-> **NOTE:** Whenever your actor receives a message, it will always have the sender of the current message available via the `Sender` property inside your actor.
+> **Внимание:** Каждый раз когда актор получает сообщения, он может достучаться до отправителя, используя свойство `Sender`.
 
-## Exercise
-In this exercise, we will introduce some basic validation into our system. We will then use custom message types to signal the results of that validation back to the user.
+## Упражнение
+В этом упражденнии, мы добавим в нашу систему базовую валидацию. Для этого мы будем использовать собственные типы сообщений, которые будут сигнализировать о корректности обработки сообщений.
 
-### Phase 1: Define your own message types
-#### Add a new class called `Messages` and the corresponding file, `Messages.cs`.
-This is the class we'll use to define system-level messages that we can use to signal events. The pattern we'll be using is to turn events into messages. That is, when an event occurs, we will send an appropriate message class to the actor(s) that need to know about it, and then listen for / respond to that message as needed in the receiving actors.
+### Шаг номер 1: Определение собственных типов сообщений
+#### Создайте новый класс `Messages` в файле `Messages.cs`.
 
-#### Add regions for each message type
-Add three regions for different types of messages to the file. Next we'll be creating our own message classes that we'll use to signify events.
+Этот класс будет использоваться для определения системных сообщений, которые будут сигнализировать о наступлении событий. Этот паттерн мы будем использовать чтобы преобразовать события в сообщения. Таким образом, когда случится событие, мы пошлем соответственное сообщение актору(-ам), которым это интересно. А потом будем слушать и отвечать на это сообщение.
+
+#### Добавьте регионы для кажого типа сообщений
+
+Добавьте три региона для различных типов сообщений. Потом мы создадим наши собственные классы сообщений, которые будем использовать для обработки событий.
 
 ```csharp
 // in Messages.cs
@@ -69,33 +76,35 @@ Add three regions for different types of messages to the file. Next we'll be cre
 #endregion
 ```
 
-In these regions we will define custom message types to signal these situations:
-	- user provided blank input
-	- user provided invalid input
-	- user provided valid input
+
+В этих регионах мы напишем классы, которые будут сигнализировать о следующих ситуациях:
+	- пользователь ввел пустую строку
+	- пользователь ввел некорректные данные
+	- пользователь ввел корректные данные
 
 
-#### Make `ContinueProcessing` message
-Define a marker message class in the `Neutral/system messages` region that we'll use to signal to continue processing (the "blank input" case):
+#### Создайте сообщение `ContinueProcessing`
+Создайте класс для сообщения-маркера в регионе `Neutral/system messages`, мы будем исполозвать его для продолжения обработки в тех случая, когда пользователь ничего не ввел:
 
 ```csharp
 // in Messages.cs
 #region Neutral/system messages
 /// <summary>
-/// Marker class to continue processing.
+/// Класс-маркер для продолжения обработки.
 /// </summary>
 public class ContinueProcessing { }
 #endregion
 ```
 
-#### Make `InputSuccess` message
-Define an `InputSuccess` class in the `Success messages` region. We'll use this to signal that the user's input was good and passed validation (the "valid input" case):
+#### Создайте сообщение `InputSuccess`
+Создайте класс `InputSuccess` в регионе `Success messages`. 
+Мы используем его в тхе случаях, когда пользователь введет корректные данные, которые успешно пройдут валидацию.:
 
 ```csharp
 #region Success messages
 // in Messages.cs
 /// <summary>
-/// Base class for signalling that user input was valid.
+/// Базовый класс, сигнализирующий о том, что пользовательский ввод валиден.
 /// </summary>
 public class InputSuccess
 {
@@ -109,14 +118,15 @@ public class InputSuccess
 #endregion
 ```
 
-#### Make `InputError` messages
-Define the following `InputError` classes in the `Error messages` region. We'll use these messages to signal invalid input occurring (the "invalid input" cases):
+#### Создайте сообщение `InputError`
 
+
+Создайте несколько наследников `InputError` в регионе `Error messages`. Они будут нужны в случаях неверно введенных данных.
 ```csharp
 // in Messages.cs
 #region Error messages
 /// <summary>
-/// Base class for signalling that user input was invalid.
+/// Базовый класс сигнализирующий об ошибке ввода
 /// </summary>
 public class InputError
 {
@@ -129,7 +139,7 @@ public class InputError
 }
 
 /// <summary>
-/// User provided blank input.
+/// Пользователь ничего не ввел.
 /// </summary>
 public class NullInputError : InputError
 {
@@ -137,7 +147,7 @@ public class NullInputError : InputError
 }
 
 /// <summary>
-/// User provided invalid input (currently, input w/ odd # chars)
+/// Пользователь ввел неверные данные (в данном случае - нечетное число символов)
 /// </summary>
 public class ValidationError : InputError
 {
@@ -147,29 +157,28 @@ public class ValidationError : InputError
 ```
 
 
-> **NOTE:** You can compare your final `Messages.cs` to [Messages.cs](Completed/Messages.cs/) to make sure you're set up right before we go on.
+> **Внимание:**  Вы можете сравнить ваш файл  `Messages.cs` с эталонным примером [Messages.cs](Completed/Messages.cs/). Убедитесь, что все сделано правильно и едем дальше.
 
-### Phase 2: Turn events into messages and send them
-Great! Now that we've got messages classes set up to wrap our events, let's use them in `ConsoleReaderActor` and `ConsoleWriterActor`.
+### Фаза №2: Превращаем события в сообщения и посылаем их
+Супер! Теперь мы можем обернуть события в наши классы-сообщения. Давайте используем их в `ConsoleReaderActor` и `ConsoleWriterActor`.
 
-#### Update `ConsoleReaderActor`
-Add the following internal message type to `ConsoleReaderActor`:
+#### Обновляем `ConsoleReaderActor`
+Добавьте внутреннее сообщение в `ConsoleReaderActor`:
 ```csharp
 // in ConsoleReaderActor
 public const string StartCommand = "start";
 ```
 
-Update the `Main` method to use `ConsoleReaderActor.StartCommand`:
+Обновите метод `Main`, таким образом, чтобы он использовал `ConsoleReaderActor.StartCommand`:
 
-Replace this:
+Замените это:
 
 ```csharp
 // in Program.cs
 // tell console reader to begin
 consoleReaderActor.Tell("start");
 ```
-
-with this:
+вот этим:
 
 ```csharp
 // in Program.cs
@@ -177,7 +186,7 @@ with this:
 consoleReaderActor.Tell(ConsoleReaderActor.StartCommand);
 ```
 
-Replace the `OnReceive` method of `ConsoleReaderActor` as follows. Notice that we're now listening for our custom `InputError` messages, and taking action when we get an error.
+Замените метод `OnReceive` у актора `ConsoleReaderActor` как показано ниже. Обратите внимание на то, что мы уже обрабатываем специализировованные сообщения типа `InputError` ,  и предпренимаем различные дейтсвия в случае ошибкиы.
 
 ```csharp
 // in ConsoleReaderActor
@@ -196,7 +205,9 @@ protected override void OnReceive(object message)
 }
 ```
 
-While we're at it, let's add `DoPrintInstructions()`, `GetAndValidateInput()`, `IsValid()` to `ConsoleReaderActor`. These are internal methods that our `ConsoleReaderActor` will use to get input from the console and determine if it is valid. (Currently, "valid" just means that the input had an even number of characters. It's an arbitrary placeholder.)
+While we're at it, let's add `DoPrintInstructions()`, `GetAndValidateInput()`, `IsValid()` to `. These are internal methods that our `ConsoleReaderActor` will use to get input from the console and determine if it is valid. (Currently, "valid" just means that the input had an even number of characters. It's an arbitrary placeholder.)
+
+Пока находимся этом файле, давайте добавим актору `ConsoleReaderActor`-у методы DoPrintInstructions()`, `GetAndValidateInput()`, `IsValid()`. Этими внутренними методами наш актор воспользуется для проверки корректности ввода. (Сейчас "правильным" вводом считается строка, состоящая из четного количества символов. Это просто заглушка, которую вы сможете заменить на то что вам больше нравится). 
 
 ```csharp
 // in ConsoleReaderActor, after OnReceive()
@@ -257,12 +268,12 @@ private static bool IsValid(string message)
 #endregion
 ```
 
-#### Update `Program`
-First, remove the definition and call to `PrintInstructions()` from `Program.cs`.
+#### Обновляем `Program`
+Сначала уберем определение и вызов метода `PrintInstructions()` из файла `Program.cs`.
 
-Now that `ConsoleReaderActor` has its own well-defined `StartCommand`, let's go ahead and use that instead of hardcoding the string "start" into the message.
+Теперь, когда у актора `ConsoleReaderActor` есть собственая команд `StartCommand`, воспользуемся ей вместо хардкода.
 
-As a quick checkpoint, your `Main()` should now look like this:
+В результате изменений , ваша `Main()` должна выглядеть приблизительно так:
 ```csharp
 static void Main(string[] args)
 {
@@ -280,12 +291,12 @@ static void Main(string[] args)
 }
 ```
 
-Not much has changed here, just a bit of cleanup.
+Не так уж много изменений, просто немного привели в порядок.
 
-#### Update `ConsoleWriterActor`
-Now, let's get `ConsoleWriterActor` to handle these new types of messages.
+#### Обновляем `ConsoleWriterActor`
+Теперь заставим `ConsoleWriterActor`-а обрабатывать новые типы сообщений.
 
-Change the `OnReceive` method of `ConsoleWriterActor` as follows:
+Измените метод `OnReceive` в `ConsoleWriterActor` следующим образом:
 
 ```csharp
 // in ConsoleWriterActor.cs
@@ -312,26 +323,27 @@ protected override void OnReceive(object message)
 }
 ```
 
-As you can see here, we are making `ConsoleWriterActor` pattern match against the type of message it receives, and take different actions according to what type of message it receives.
+Как вы видите, мы заставляем `ConsoleWriterActor`-а проверять  каждое сообщеник, которое он получает и выполнять различные действия в зависимости от типа этого сообщения.
 
-### Phase 3: Build and run!
-You should now have everything you need in place to be able to build and run. Give it a try!
+### Фаза 3: Собираем и запускаем!
+Все готово к сборке и запуска проекта. Давайте пробовать!
 
-If everything is working as it should, you should see an output like this:
+Если все отработало должным образом, вывод должен выглядеть приблизительно так::
 ![Petabridge Akka.NET Bootcamp Lesson 1.2 Correct Output](Images/working_lesson2.jpg)
 
-### Once you're done
-Compare your code to the solution in the [Completed](Completed/) folder to see what the instructors included in their samples.
+### Когда все сделано
+Сравните код, который у вас вышел с примером [Completed](Completed/) , обратите внимание на комментарии в примере.
 
-##  Great job! Onto Lesson 3!
-Awesome work! Well done on completing this lesson.
+## Хорошая работа! Переходим к уроку №3!
+Супер! Поздравляем с завершением этого урока!.
 
-**Let's move onto [Lesson 3 - `Props` and `IActorRef`s](../lesson3).**
+**Двигаем к [Урок 3 - `Props` и `IActorRef`-ы](../lesson3).**
 
-## Any questions?
-**Don't be afraid to ask questions** :).
+## Есть вопросы?
+**Не стесняйтесь задавать вопроосы** :).
 
-Come ask any questions you have, big or small, [in this ongoing Bootcamp chat with the Petabridge & Akka.NET teams](https://gitter.im/petabridge/akka-bootcamp).
 
-### Problems with the code?
-If there is a problem with the code running, or something else that needs to be fixed in this lesson, please [create an issue](https://github.com/petabridge/akka-bootcamp/issues) and we'll get right on it. This will benefit everyone going through Bootcamp.
+Можете задавать любые вопросы, большие и маленькие, [в этом чате команд Petabridge и Akka.NET (английский)](https://gitter.im/petabridge/akka-bootcamp).
+
+### Проблемы с кодом?
+Если у вас возникил проблемы с запуском кода или чем-то другим, что необходимо починить в уроке, пожалуйста, [создайте issue](https://github.com/petabridge/akka-bootcamp/issues) и мы это пофиксим. Таким образом вы поможете всем кто будет проходить эту обучалку.

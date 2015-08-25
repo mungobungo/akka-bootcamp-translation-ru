@@ -4,44 +4,49 @@
 namespace WinTail
 {
     #region Program
-    class Program
+    class Program 
     {
         public static ActorSystem MyActorSystem;
 
         static void Main(string[] args)
         {
-            // initialize MyActorSystem
-            // YOU NEED TO FILL IN HERE
+            // Добавляем для корректного вывода русских символов в консоль
+            Console.OutputEncoding = System.Text.Encoding.Unicode;
+            
+            // ициализируем MyActorSystem
+            // ЗДЕСЬ НАДО ДОБАВИТЬ КОД
+            MyActorSystem = ActorSystem.Create("MyActorSystem");
 
+            var consoleWriteActor = MyActorSystem.ActorOf(Props.Create(() => new ConsoleWriterActor()));
+
+            var consoleReaderActor = MyActorSystem.ActorOf(Props.Create(() => new ConsoleReaderActor(consoleWriteActor)));
             PrintInstructions();
 
-            // time to make your first actors!
-            //YOU NEED TO FILL IN HERE
-            // make consoleWriterActor using these props: Props.Create(() => new ConsoleWriterActor())
-            // make consoleReaderActor using these props: Props.Create(() => new ConsoleReaderActor(consoleWriterActor))
+            consoleReaderActor.Tell("whatever");
 
 
-            // tell console reader to begin
-            //YOU NEED TO FILL IN HERE
+            // Скажите актору, отвечающему за чтение из консоли приступить к работе.
+            // ВАМ НАДО ДОБАВИТЬ КОД
 
-            // blocks the main thread from exiting until the actor system is shut down
+            // Блокируем главный поток до тех пор, пока система акторов не отключится
             MyActorSystem.AwaitTermination();
         }
 
         private static void PrintInstructions()
         {
-            Console.WriteLine("Write whatever you want into the console!");
-            Console.Write("Some lines will appear as");
+          
+            Console.WriteLine("Напишите в консоли все что угодно!");
+            Console.Write("Некоторые строки будут напечатаны");
             Console.ForegroundColor = ConsoleColor.DarkRed;
-            Console.Write(" red ");
+            Console.Write(" красным ");
             Console.ResetColor();
-            Console.Write(" and others will appear as");
+            Console.Write(" другие же будут");
             Console.ForegroundColor = ConsoleColor.Green;
-            Console.Write(" green! ");
+            Console.Write(" зелеными! ");
             Console.ResetColor();
             Console.WriteLine();
             Console.WriteLine();
-            Console.WriteLine("Type 'exit' to quit this application at any time.\n");
+            Console.WriteLine("Напечатайте 'exit' чтобы завершить работу приложения.\n");
         }
     }
     #endregion
