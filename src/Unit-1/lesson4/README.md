@@ -1,15 +1,15 @@
-# Lesson 1.4: Child Actors, Actor Hierarchies, and Supervision
-This lesson will make a big jump forward in both the capabilities of our codebase, and in your understanding of how the actor model works.
+# Урок 1.4: Дочерние акторы, иерархия акторов, супервизоры
+Этот урок будет гигантским рывком как в расширении возможностей нашей программы, так и в нашем понимании принципов работы модели акторов.
 
-This lesson is our most challenging one yet, so let's get right to it!
+Это один из самых сложных уроков, поэтому будьте готовы!
 
-## Key concepts / background
-Before we get into the details of the actor hierarchy itself, let's stop and ask: why do we need a hierarchy at all?
+## Ключевые идеи / общая информация
+Перед тем как мы погрузимся в детали иерархии акоторов, остановимся и зададим себе вопрос : зачем нам в принципе нужна иерархия?
 
-There are two key reasons actors exist in a hierarchy:
+Вот две ключевых причины существования иерархии:
 
-1. To atomize work and turn massive amounts of data into manageable chunks
-1. To contain errors and make the system resilient
+1. Разбить работу на независимые части и поделить огромные массивы данных на удобоваримые куски
+1. Ограничить влияние ошибок и сделать систему гибкой
 
 ### Hierarchies atomize work
 Having a hierarchy helps our system to break down work into smaller and smaller pieces, and to allow for different skill specializations at different levels of the hierarchy.
