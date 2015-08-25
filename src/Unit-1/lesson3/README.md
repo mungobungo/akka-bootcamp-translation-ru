@@ -25,20 +25,21 @@
 Есть два основных способа получения `IActorRef`.
 
 ##### 1) Создание актора
-Actors form intrinsic supervision hierarchies (we cover in detail in lesson 5). This means there are "top level" actors, which essentially report directly to the `ActorSystem` itself, and there are "child" actors, which report to other actors.
+Акторы формируют иерархию супревизоров (мы разберемся с этим на уроке №5) . Это означает что существуют акторы "верхнего уровня",  которые отчитываются напрямую перед системой `ActorSystem`, а есть дочерние акторы, которые отчитываются перед другими акторами.
 
-To make an actor, you have to create it from its context. And **you've already done this!** Remember this?
+Чтобы создать актора, вы должны воплпользоваться конекстом. А **это вы уже  делали!** Припоминаете?
 ```csharp
-// assume we have an existing actor system, "MyActorSystem"
+// предположим, что система акторов "MyActorSystem" была создана ранее
 IActorRef myFirstActor = MyActorSystem.ActorOf(Props.Create(() => new MyActorClass()), "myFirstActor")
 ```
 
-As shown in the above example, you create an actor in the context of the actor that will supervise it (almost always). When you create the actor on the `ActorSystem` directly (as above), it is a top-level actor.
+Как показано в примере выше, вы содаете актора в контексте другого актора, который будет супервизором(почти всегда). Когда вы создаете актора напрямую в `ActorSystem`, это актор верхнего уровня.
 
-You make child actors the same way, except you create them from another actor, like so:
+Вы создаете дочерних акторов подобным образом. Вы просто делаете это изнутри другого актора.
+Что-то вроде этого:
 ```csharp
-// have to create the child actor somewhere inside myFirstActor
-// usually happens inside OnReceive or PreStart
+// создаем дочернего актора где-то в глубине myFirstActor
+// Обычно это делается в методах OnReceive или PreStart
 class MyActorClass : UntypedActor{
 	protected override void PreStart(){
 		IActorRef myFirstChildActor = Context.ActorOf(Props.Create(() => new MyChildActorClass()), "myFirstChildActor")
@@ -46,50 +47,50 @@ class MyActorClass : UntypedActor{
 }
 ```
 
-**\*CAUTION***: Do NOT call `new MyActorClass()` outside of `Props` and the `ActorSystem` to make an actor. We can't go into all the details here, but essentially, by doing so you're trying to create an actor outside the context of the `ActorSystem`. This will produce a completely unusable, undesirable object.
+**\*ОСТОРОЖНО***: НЕ создавайте актора при помощи `new MyActorClass()`. Всегда пользуйтесь услугами `Props` и `ActorSystem` для создания акторов. Мы не будем сильно углубляться, но поступая так, актор будет создан вне контекста `ActorSystem`. И этот актор будет бесполезным объектом, который никто не сможет нормально исопльзовать.
 
 
-##### 2) Look up the actor
-All actors have an address (technically, an `ActorPath`) which represents where they are in the system hierarchy, and you can get a handle to them (get their `IActorRef`) by looking them up by their address.
+##### 2) Поиск актора
+У всех акторов есть адрес (технически, за это отвечает класс `ActorPath`) который описывает их место в иерархии. Вы можете получыить ссылку на них (`IActorRef`) используя соответствующий адрес.
 
-We will cover this in much more detail in the next lesson.
+Подробнее об этом на следующем уроке.
 
-#### Do I have to name my actors?
-You may have noticed that we passed names into the `ActorSystem` when we were creating the above actors:
+#### Надо ли давать акторам имена?
+Вы могли заметить, что когда мы создавали акторов, мы передавали имена в `ActorSystem`:
 ```csharp
-// last arg to the call to ActorOf() is a name
+// последний аргумент метода ActorOf() это имя
 IActorRef myFirstActor = MyActorSystem.ActorOf(Props.Create(() => new MyActorClass()), "myFirstActor")
 ```
 
-This name is not required. It is perfectly valid to create an actor without a name, like so:
+Давать актору имя необязательно. Можно абсолютно спокойно создавать безымянных акторов, например так:
 ```csharp
-// last arg to the call to ActorOf() is a name
+// в этот раз имя не передаем 
 IActorRef myFirstActor = MyActorSystem.ActorOf(Props.Create(() => new MyActorClass()))
 ```
 
-That said, **the best practice is to name your actors**. Why? Because the name of your actor is used in log messages and in identifying actors. Get in the habit, and your future self will thank you when you have to debug something and it has a nice label on it :)
+НО, **правило хорошего тона - давать акторам осмысленные имена**. Почему?  Потому что имя актора используется для логирования собщеий, а также для идентификации акторов. Приобретите эту полезную привычку, и вы в будущем будете счастлиыв, когда придется отлаживать что-то, что имеет четкое имя и хорошо видно в логах :)
 
-#### Are there different types of `IActorRef`s?
-Actually, yes. The most common, by far, is just a plain-old `IActorRef` or handle to an actor, as above.
+#### Существуют ли различные типы `IActorRef`-ов?
+Строго говоря, да. Но в большинстве случаев, это просто старый добрый `IActorRef`.
 
-However, there are also some other `IActorRef`s available to you within the context of an actor. As we said, all actors have a context. That context holds metadata, which includes information  about the current message being processed. That information includes things like the `Parent` or `Children` of the current actor, as well as the `Sender` of the current message.
+Однако в рамках конекста актора, доступны другие `IActorRef`-ы. Как мы говорили ранее, у всех акторов есть конекст. В этом контексте содержатся метаданные, которые включают в себя информацию о сообщении, которое обрабатывается в данный момент. Эта информация включает в себя вещи вроде родителя и детей текущего актора (свойства `Parent` и `Children` соответственно). Также вы можете получить ссылку на отправителя сообщения (`Sender`).
 
-`Parent`, `Children`, and `Sender` all provide `IActorRef`s that you can use.
+`Parent`, `Children`, и `Sender` это обычные `IActorRef`-ы, которые можно использовать в ваших программах.
 
-### Props
-#### What are `Props`?
-Think of [`Props`](http://api.getakka.net/docs/stable/html/CA4B795B.htm "Akka.NET Stable API Documentation - Props class") as a recipe for making an actor. Technically, `Props` is a configuration class that encapsulates all the information needed to make an instance of a given type of actor.
+### Props-ы
+#### Что такое `Props`?
+Думайте о [`Props`](http://api.getakka.net/docs/stable/html/CA4B795B.htm "Akka.NET Stable API Documentation - Props class") как о рецепте создания актора. Технически, `Props` это конфигурационный класс, который содержит в себе всю информацию, необоходимую для создания экземпляра актора определенного типа.
 
-#### Why do we need `Props`?
-`Props` objects are shareable recipes for creating an instance of an actor. `Props` get passed to the `ActorSystem` to generate an actor for your use.
+#### Зачем нужны `Props`-ы?
+`Props` это рецепты по созданию акторов. `Props`-ы передаются в `ActorSystem`, для того чтобы создать актора нужного типа .
 
-Right now, `Props` probably feels like overkill. (If so, no worries.) But here's the deal.
+На данный момент, вам может показаться, что использовние `Props`-ов приносит больше головной боли чем пользы. (Если вам действительно так кажется, не беспокойтесь.) Но вот в чем дело.
 
-The most basic `Props`, like we've seen, seem to only include the ingredients needed to make an actor—it's class and required args to its constructor.
-
-BUT, what you haven't seen yet is that `Props` get extended to contain deployment information and other configuration details that are needed to do remote work. For example, `Props` are serializable, so they can be used to remotely create and deploy entire groups of actors on another machine somewhere on the network!
+До сих пор, все `Props`-ы, которые мы видели, включали в себя только ингридиенты в виде типа актора и параметров для конструктора.
+НО, вы еще не видели, как `Props`-ы можно расширить информацие об удаленном развертывании актора, и другими конфигурационными параметрами. Например, `Props`-ы являются сериализируемымы сущностями, так что их можно использовать для того, чтобы удаленно создавать и развертывать группы акторов, на другой машине на противоположном участке сети!
 
 That's getting way ahead of ourselves though, but the short answer is that we need `Props` to support a lot of the advanced features (clustering, remote actors, etc) that give Akka.NET the serious horsepower which makes it interesting.
+Мы сильно забегаем вперед, но вкратце - `Props`-ы нужны для поддержки продвинутых возможностей для создания акторов. Например кластеры, удаленные акторы и т.п. Эти вещи добавляют дополнительные ш
 
 #### How do I make `Props`?
 Before we tell you how to make `Props`, let me tell you what NOT to do.
