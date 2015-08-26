@@ -218,7 +218,7 @@ public class MyActor : UntypedActor
 }
 ```
 
-### Зачем все эти приседания? Политика сдерживания.
+### К чему эти приседания? Политика сдерживания.
 Весь смыл стратегий супервизора вместе с директивами заключается в возможности ограничить ошибку в рамках системы и дать возможность ей самоисцелиться. Таким образом система в целом не упадет. Но как мы этого добьемся?
 
 Мы спускаем потенциально опасные операции вниз по иерархии, до тех акторов, которые выполняют исключетельно одну опасную задачу.
@@ -243,7 +243,7 @@ public class MyActor : UntypedActor
 > Вы можете услышать, как люди употребляют термин "ядро ошибки", имея ввиду какая часть системы подвержена влиянию ошибки. Также говорят "паттерн ядро ошибки", пордазумевая подход который я только что описал. Мы отодвигаем опасное поведение как можно дальше по иерархии и изолируем/защищаем родительские процессы.
 
 ## Упражнение
-To start off, we need to do some upgrading of our system. We are going to add in the components which will enable our actor system to actually monitor a file for changes. We have most of the classes we need, but there are a few pieces of utility code that we need to add.
+
 Для начала, немного проапгрейдим нашу системц. Мы собираемся добавить компоненты, которые позволят нашей программе действительно отслеживать изменения в файлах. Большинство задач уже решены, нам нужны некоторые системные функции, котороые позволят все собрать в кучу.
 
 Мы почти готовы к запуску! Осталось добавить `TailCoordinatorActor`, `TailActor`, и `FileObserver`.
@@ -360,7 +360,7 @@ using Akka.Actor;
 namespace WinTail
 {
     /// <summary>
-    /// Turns <see cref="FileSystemWatcher"/> events about a specific file into messages for <see cref="TailActor"/>.
+    /// Превращает события от <see cref="FileSystemWatcher"/> в собщения для <see cref="TailActor"/>.
     /// </summary>
     public class FileObserver : IDisposable
     {
@@ -379,30 +379,30 @@ namespace WinTail
         }
 
         /// <summary>
-        /// Begin monitoring file.
+        /// Начинаем мониторить файл.
         /// </summary>
         public void Start()
         {
-            // Need this for Mono 3.12.0 workaround
-            // Environment.SetEnvironmentVariable("MONO_MANAGED_WATCHER", "enabled"); // uncomment this line if you're running on Mono!
+            // Нужно как костыль для Mono 3.12.0 
+            // Environment.SetEnvironmentVariable("MONO_MANAGED_WATCHER", "enabled"); // раскомментируйте эту строку, если запускаете программу под Mono
 
-            // make watcher to observe our specific file
+            // начинаем наблюдать за файлом
             _watcher = new FileSystemWatcher(_fileDir, _fileNameOnly);
 
-            // watch our file for changes to the file name, or new messages being written to file
+            // нам интересны события изменения имени файла или добавления в него данных
             _watcher.NotifyFilter = NotifyFilters.FileName | NotifyFilters.LastWrite;
 
-            // assign callbacks for event types
+            // добавляем коллбеки
             _watcher.Changed += OnFileChanged;
             _watcher.Error += OnFileError;
 
-            // start watching
+            // начинаем наблюдать
             _watcher.EnableRaisingEvents = true;
 
         }
 
         /// <summary>
-        /// Stop monitoring file.
+        /// Останавливаем мониторинг файла.
         /// </summary>
         public void Dispose()
         {
@@ -410,7 +410,7 @@ namespace WinTail
         }
 
         /// <summary>
-        /// Callback for <see cref="FileSystemWatcher"/> file error events.
+        /// Коллбек для ошибок <see cref="FileSystemWatcher"/> .
         /// </summary>
         /// <param name="sender"></param>
         /// <param name="e"></param>
@@ -420,7 +420,7 @@ namespace WinTail
         }
 
         /// <summary>
-        /// Callback for <see cref="FileSystemWatcher"/> file change events.
+        /// Коллбек для изменений файла <see cref="FileSystemWatcher"/>.
         /// </summary>
         /// <param name="sender"></param>
         /// <param name="e"></param>
@@ -428,8 +428,8 @@ namespace WinTail
         {
             if (e.ChangeType == WatcherChangeTypes.Changed)
             {
-                // here we use a special ActorRefs.NoSender
-                // since this event can happen many times, this is a little microoptimization
+                // Мы используем специальную ссылку ActorRefs.NoSender
+                // небольшая микрооптимизация, поскольку событие может прийти несколько раз
                 _tailActor.Tell(new TailActor.FileWrite(e.Name), ActorRefs.NoSender);
             }
 
@@ -460,7 +460,7 @@ namespace WinTail
     {
         #region Message types
         /// <summary>
-        /// Start tailing the file at user-specified path.
+        /// Начинаем читать изменения файла
         /// </summary>
         public class StartTail
         {
@@ -476,7 +476,7 @@ namespace WinTail
         }
 
         /// <summary>
-        /// Stop tailing the file at user-specified path.
+        /// Перестаем читать изменения в файле
         /// </summary>
         public class StopTail
         {
@@ -495,7 +495,7 @@ namespace WinTail
             if (message is StartTail)
             {
                 var msg = message as StartTail;
-                // YOU NEED TO FILL IN HERE
+                // КОД ДОБАВЛЯТЬ СЮДА
             }
 
         }
@@ -534,14 +534,14 @@ using Akka.Actor;
 namespace WinTail
 {
     /// <summary>
-    /// Monitors the file at <see cref="_filePath"/> for changes and sends file updates to console.
+    /// Мониторит файл <see cref="_filePath"/> и отправляет изменения на консоль.
     /// </summary>
     public class TailActor : UntypedActor
     {
         #region Message types
 
         /// <summary>
-        /// Signal that the file has changed, and we need to read the next line of the file.
+        /// Сигнализирует о том, что файл изменился, и мы можем прочитать новую строку
         /// </summary>
         public class FileWrite
         {
@@ -554,7 +554,7 @@ namespace WinTail
         }
 
         /// <summary>
-        /// Signal that the OS had an error accessing the file.
+        /// Сигнализирует об ошибке операционной системы при попытке доступа к файлу.
         /// </summary>
         public class FileError
         {
@@ -570,7 +570,7 @@ namespace WinTail
         }
 
         /// <summary>
-        /// Signal to read the initial contents of the file at actor startup.
+        /// Сигнализирует о необходимости считать первичное содержимое файла при запуске
         /// </summary>
         public class InitialRead
         {
@@ -597,16 +597,16 @@ namespace WinTail
             _reporterActor = reporterActor;
             _filePath = filePath;
 
-            // start watching file for changes
+            // начинаем наблюдать за изменениями в файле
             _observer = new FileObserver(Self, Path.GetFullPath(_filePath));
             _observer.Start();
 
-            // open the file stream with shared read/write permissions (so file can be written to while open)
+            // открываем поток с правами на одновременные чтение/запись (чтобы в открытый файл можно было писать)
             _fileStream = new FileStream(Path.GetFullPath(_filePath), FileMode.Open, FileAccess.Read,
                 FileShare.ReadWrite);
             _fileStreamReader = new StreamReader(_fileStream, Encoding.UTF8);
 
-            // read the initial contents of the file and send it to console as first message
+            // Читаем первичное содержимое файла и выводим его на консоль
             var text = _fileStreamReader.ReadToEnd();
             Self.Tell(new InitialRead(_filePath, text));
         }
@@ -615,9 +615,9 @@ namespace WinTail
         {
             if (message is FileWrite)
             {
-                // move file cursor forward
-                // pull results from cursor to end of file and write to output
-                // (this is assuming a log file type format that is append-only)
+              
+                // считываем данные от текущего положения до конца файла
+                // (предполагается, что в лог-файл все изменения добавляются в конец)
                 var text = _fileStreamReader.ReadToEnd();
                 if (!string.IsNullOrEmpty(text))
                 {
