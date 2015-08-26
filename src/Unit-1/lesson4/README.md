@@ -9,25 +9,28 @@
 Вот две ключевых причины существования иерархии:
 
 1. Разбить работу на независимые части и поделить огромные массивы данных на удобоваримые куски
-1. Ограничить влияние ошибок и сделать систему гибкой
+1. Ограничить влияние ошибок и сделать систему стабильной
 
-### Hierarchies atomize work
-Having a hierarchy helps our system to break down work into smaller and smaller pieces, and to allow for different skill specializations at different levels of the hierarchy.
+### Иерархии позволяют разбить задачу на части
 
-A common way this is realized in an actor systems is that large data streams get atomized, broken down over and over again until they are small and can easily be dealt with by a small code footprint.
+Иерарзия позволяет дробить нашу систему на все меньшие и меньшие части. Разные уровни иерархии могут отвечать за разный функционал (совсем как в жизни!).
 
-Let's take Twitter as an example (users of JVM Akka). Using Akka, Twitter is able to break up their massive ingestion of data into small, manageable streams of information that they can react to. For instance - Twitter can break up their giant firehose of tweets into individual streams for the timeline of each user currently on the site, and they can use Akka to push messages that have arrived for that user into their stream via websocket / etc.
+В основном в актор-ориентированых приложениях огромные потоки данных разбиваются на маленькие ручейки, с которыми можно легко разобраться небольшим куском кода.
 
-What's the pattern? Take a lot of work. Break it down recursively until it is easily dealt with. Respond as needed.
 
-### Hierarchies enable resilient systems
-A hierarchy allows for different levels of risk and specialization to exist that could not otherwise.
+Возьмем к примеру Twitter (они используют JVM Akka). При помощи Akka, Twitter может расперделить огромный объем входящих данных на небольшие блоки, которые можно обработать. Например - Twitter дробит чудовищное число твитов на инидвидуальные потоки для каждого пользователя, который в данный момент находится на сайте. Каждый поток доставляется пользователи при помощи вебсокетов.
 
-Think of how an army works. An army has a general setting strategy and overseeing everything, but she is usually not going to be on the front line of the battle where there is the most risk. However, she has wide leverage and guides everything. At the same time, there are lower-ranking soldiers who are on the front lines, doing risky operations and carrying out the orders that they receive.
+Видите общую идею? Возмите гродадный кусок работы. Рекурсивно разбейте его на части, легкие для понимания и обработки. Готово.
 
-This is exactly how an actor system operates.
+### Иерархии позволяют делать стабильные системы
+Иерархии позволюят гибко ограничивать уровень риска и ответствености.
 
-Higher-level actors are more supervisional in nature, and this allows the actor system to push risk down and to the edges. By pushing risky operations to the edges of the hierarchy, the system can isolate risk and recover from errors without the whole system crashing.
+
+Подумайте о том, как работает армия. В армии есть генерал, который задает стратегию и контролирует поле боя. Но обычно он не идет на передовую, подвергая свою жизнь риску. Но тем не менее у него очень широкие полномочия и возможности. В то же вермя есть рядовые солдаты, которые выполняют рискованные операции на передовой и выполняют те приказы, которые они получили.
+
+Система акторов работает точно таким же образом.
+
+Акторы верхнего уровня обычно являются супервизорами, и отправляют рискованные операции как можно ниже по иерархии. Таким образом система может минимизировать риск, и обеспечить восстановление от ошибок без падения всей системы.
 
 Both of these concepts are important, but for the rest of this lesson we'll put our emphasis on how actor systems use hierarchies to be resilient.
 
