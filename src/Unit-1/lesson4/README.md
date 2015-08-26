@@ -705,30 +705,30 @@ protected override SupervisorStrategy SupervisorStrategy()
 
 #### Запускаем
 ##### Проверьте сообщения при запуске
-Run the application and you should see a console window open up and print out the starting contents of your log file. The starting state should look like this if you're using the sample log file we provided:
+Запустите приложение, и вы должны увидеть в консоли содержимое лог-файла. Примерно как на картинке:
 ![Petabridge Akka.NET Bootcamp Actor Hierarchies](Images/working_tail_1.png)
 
-**Leave both the console and the file open, and then...**
+**Оставьте консоль и файл открытыми ии....**
 
-##### Add text and see if the `tail` works!
-Add some lines of text to the text file, save it, and watch it show up in the `tail`!
+##### Добавьте текст в файл, и узрите работу `tail`!
+Добавьте несколько строчек файл, сохраните его, и убедитесь что строки появились в  `tail`!
 
-It should look something like this:
+Все будет выглядеть следующим образом:
 ![Petabridge Akka.NET Bootcamp Actor Hierarchies](Images/working_tail_2.png)
 
-Congrats! YOU HAVE JUST MADE A PORT OF `tail` IN .NET!
+Поздравляю! ВЫ ТОЛЬКО ЧТО ПОРТИРОВАЛИ `tail` НА .NET!
 
-### Once you're done
-Compare your code to the solution in the [Completed](Completed/) folder to see what the instructors included in their samples.
+### Когда все сделано
+Сравните код, который у вас вышел с примером [Completed](Completed/) , обратите внимание на комментарии в примере.
 
-## Great job! Onto Lesson 5!
-Awesome work! Well done on completing this lesson, we know it was a bear! It was a big jump forward for our system and in your understanding.
+## Отлично поработали! Переходим к уроку №5!
+Неплохо!  Поздравляем с завершение этого урока, мы знаем что это было непросто! Вы совершили действительно большой скачок в понимании акторов и их взаимодествия.
 
-Here is a high-level overview of our working system!
+Вот высокоуровневая структура нашей системы!
 
 ![Akka.NET Unit 1 Tail System Diagram](Images/system_overview.png)
 
-**Let's move onto [Lesson 5 - Looking up Actors by Address with `ActorSelection`](../lesson5).**
+**Переходим к [Lesson 5 - Looking up Actors by Address with `ActorSelection`](../lesson5).**
 
 ---
 ## Supervision FAQ
