@@ -137,59 +137,61 @@ IActorRef b2 = Context.ActorOf(Props.Create<BasicActor>(), "b2");
 > Акторы контролируют только своих детей, ровно на один уровень вниз по иерархии.
 
 #### А когда супервизоры вступают в игру? В случае ошибок!
-When things go wrong, that's when! Whenever a child actor has an unhandled exception and is crashing, it reaches out to its parent for help and to tell it what to do.
+Когда что-то идет не так с этим разбираются супервизоры. Если дочерний актор выбрасывает необработанное исключение и падает, это исключение ловит родитель и принимает решение о том, что делать дальше.
 
-Specifically, the child will send its parent a message that is of the `Failure` class. Then it's up to the parent to decide what to do.
+В частности, наследник может послать родителю с ообщению с типом ошибки (`Failure`), которая произошла. 
 
-#### How can the parent resolve the error?
-There are two factors that determine how a failure is resolved:
+#### Каким образом родительский актор разбирается с ошибкой?
 
-1. How the child failed (what type of `Exception` did the child include in its `Failure` message to its parent.)
-1. What Directive the parent actor executes in response to a child `Failure`. This is determined by the parent's `SupervisionStrategy`.
+Вот два основных фактора влияющих на то, как разрешится проблема:
 
-##### Here's the sequence of events when an error occurs:
+1. В зависимости от того, как именно упал дочерний актор (какой `Exception` указан в сообщении `Failure` )
+1. Какую директиву использует родитель в ответ на  `Failure` наследника. Это определяется стратегией супервизора (`SupervisionStrategy`).
 
-1. Unhandled exception occurs in child actor (`c1`), which is supervised by its parent (`b1`).
-2. `c1` suspends operations.
-3. The system sends a `Failure` message from `c1` to `b1`, with the `Exception` that was raised.
-4. `b1` issues a directive to `c1` telling it what to do.
-5. Life goes on, and the affected part of the system heals itself without burning down the whole house. Kittens and unicorns, handing out free ice cream and coffee to be enjoyed while relaxing on a pillowy rainbow. Yay!
+##### В случае возникновения исключения события развиваются следующим образом:
+
+1. Необработанное исключение возникает в акторе (`c1`), за которым наблюдает его родитель (`b1`).
+2. `c1` останавливается.
+3. Система посылает сообщение `Failure` от `c1` к `b1`, с указанием исключения(`Exception`) которое произошло.
+4. На основании директивы `b1` дает указание `c1` о дальнейших действиях.
+5. Жизнь идет своим чередом, часть системы которая поломалась самоисцелилась, не уничтожив при этом вселенную. Котята и единороги, получив бесплатное мороженое и кофе балдят на радуге. Ня!
 
 
-##### Supervision directives
-When it receives an error from its child, a parent can take one of the following actions ("directives"). The supervision strategy maps different exception types to these directives, allowing you to handle different types of errors as appropriate.
+##### Директивы супервизоров
+Когда в дочернем акторе случается ошибка, родитель может принять решение на основе директивы ("directives"). Стратегия супервизора находит директиву соответствующую типу исклюяения, позволяя обрабатывать разные исключения подобающим образом.
 
-Types of supervision directives (i.e. what decisions a supervisor can make):
+Список доступных директив (т.е. какие решения может принять супервизор):
 
-- **Restart** the child (default): this is the common case, and the default.
-- **Stop** the child: this permanently terminates the child actor.
-- **Escalate** the error (and stop itself): this is the parent saying "I don't know what to do! I'm gonna stop everything and ask MY parent!"
-- **Resume** processing (ignores the error): you generally won't use this. Ignore it for now.
+- **Restart** перезапуск дочернего актора: наиболее популярный вариант, применяемый по умолчанию.
+- **Stop**  полная остановка дочернего актора.
+- **Escalate**  эскалация ошибки  (и остановка супервизора): родительский актор-супервизор говорит "Я не знаю что делать дальше! Я бросаю все и предаю управление СВОЕМУ супервизору"
+- **Resume** продолжаем работу(игнорируем ошибку) : в подавляющем большинстве случаев вам это не понадобится. Пока проигнорируем.
 
-> *The critical thing to know here is that ***whatever action is taken on a parent propagates to its children***. If a parent is halted, all its children halt. If it is restarted, all its children restart.*
+> *Критически важный момент *** любое действие над родителем распространяется и на его потомков***. Если родительский актор остановлен, его дочерние акторы также будут остановлены. Если родитель перезапущен, наследники тоже будут перезапущены.*
 
-##### Supervision strategies
-There are two built-in supervision strategies:
+##### Стратегии супервизоров
+Сущуствует 2 стратегии для супервизоров:
 
-1. One-For-One Strategy (default)
-2. All-For-One Strategy
+1. One-For-One (Каждый-сам-за-себя), которая применяется по умолчанию
+2. All-For-One (Все-за-одного)
 
- The basic difference between these is how widespread the effects of the error-resolution directive will be.
+ Разница заключается в том, насколько широко будут распространяться действия по разрешению ошибки.
+ 
 
-**One-For-One** says that that the directive issued by the parent only applies to the failing child actor. It has no effect on the siblings of the failing child. This is the default strategy if you don't specify one. (You can also define your own custom supervision strategy.)
+**One-For-One** (Каждый-сам-за-себя) говорит о том, что директива, которую применяет супервизор будет относиться только к сбойному актору. Другие потомки супервизора не будут затронуты. Если вы не укажете стратеги, по умолчанию применится One-For-One . (Существует возможность создать собственную стратегию для супервизора.)
 
-**All-For-One** says that that the directive issued by the parent applies to the failing child actor AND all of its siblings.
+**All-For-One** (Все-за-одного) говорит, что директива будет распространяться на актора, в котором произошла ошибка, *а также на всех остальных* потомков супервизора.
 
-The other important choice you make in a supervision strategy is how many times a child can fail within a given period of time before it is shut down (e.g. "no more than 10 errors within 60 seconds, or you're shut down").
+Дополнительный важный выбор, который вам предствоит сделать, сколько раз дочерний актор может сбоить в течение заданного промежутка времени, пока его не отключат. (например, "не более 10 ошибок в течение 60 секунд, или мы тебя вырубим").
 
-Here's an example supervision strategy:
+Пример стратегии супервизора:
 
 ```csharp
 public class MyActor : UntypedActor
 {
-    // if any child of MyActor throws an exception, apply the rules below
-    // e.g. Restart the child, if 10 exceptions occur in 30 seconds or
-    // less, then stop the actor
+    // Если какой-то наследник MyActor-а выбросит исключение, применяем следующие правила
+    // Перезапускаем, если число исключений меньше 10 за 30 секунд
+    // в противном случае останавливаем поломанного актора
     protected override SupervisorStrategy SupervisorStrategy()
     {
         return new OneForOneStrategy(// or AllForOneStrategy
@@ -197,17 +199,17 @@ public class MyActor : UntypedActor
             withinTimeRange: TimeSpan.FromSeconds(30),
             localOnlyDecider: x =>
             {
-                // Maybe ArithmeticException is not application critical
-                // so we just ignore the error and keep going.
+                // Может быть ArithmeticException не критично 
+                // для нашего приложения, поэтому просто продолжаем.
                 if (x is ArithmeticException) return Directive.Resume;
 
-                // Error that we have no idea what to do with
+                // А с этим исключением мы понятия не имеем что делать
                 else if (x is InsanelyBadException) return Directive.Escalate;
 
-                // Error that we can't recover from, stop the failing child
+                // Это исключение мы не можем толком обработать, поэтому остановим актора
                 else if (x is NotSupportedException) return Directive.Stop;
 
-                // otherwise restart the failing child
+                // Во всех остальных случаях просто перезапустим блудного сына
                 else return Directive.Restart;
             });
     }
@@ -216,41 +218,43 @@ public class MyActor : UntypedActor
 }
 ```
 
-### What's the point? Containment.
-The whole point of supervision strategies and directives is to contain failure within the system and self-heal, so the whole system doesn't crash. How do we do this?
+### Зачем все эти приседания? Политика сдерживания.
+Весь смыл стратегий супервизора вместе с директивами заключается в возможности ограничить ошибку в рамках системы и дать возможность ей самоисцелиться. Таким образом система в целом не упадет. Но как мы этого добьемся?
 
-We push potentially-dangerous operations from a parent to a child, whose only job is to carry out the dangerous task.
+Мы спускаем потенциально опасные операции вниз по иерархии, до тех акторов, которые выполняют исключетельно одну опасную задачу.
 
-For example, let's say we're running a stats system during the World Cup, that keeps scores and player statistics from a bunch of games in the World Cup.
+Например, мы запустили систему статистики во время ЧМ по футболу. Эта система позволяет смотреть результаты матчей и статистику по игрокам.
 
-Now, being the World Cup, there could be huge demand on that API and it could get throttled, start rate-limiting, or just plain crash (no offense FIFA, I love you guys and the Cup). We'll use the epic Germany-Ghana match as an example.
+Поскольку это чемпионат мира, может статься, что API может быть ограничено по количество запросов, может отвечать не быстро, а может и просто упасть. (Без обид ФИФА, я люблю вас ребята вместе с ЧМ). Для примера возьмем эпичный матч Германия-Гана.
 
-But our scorekeeper has to periodically update its data as the game progresses. Let's assume it has to call to an external API maintained by FIFA to get the data it needs.
+Наш сервис хранения резульаттов матчей должен периодически обновляться в процессе игры. Давайте предположим, что он дергает внешиний API который используется ФИФА для получения этих данных.
 
-***This network call is dangerous!*** If the request raises an error, it will crash the actor that started the call. So how do we protect ourselves?
+***Обращение по сети опасная вещь!*** Если запрос завершится с ошибкой, актор, который выполнял его остановится. Так как же нам защититься от подобного?
 
-We keep the stats in a parent actor, and push that nasty network call down into a child actor. That way, if the child crashes, it doesn't affect the parent, which is holding on to all the important data. By doing this, we are **localizing the failure** and keeping it from spreading throughout the system.
+Мы будем хранить всю статистику в родителе, а опасный сетевой вызов дадим на откуп дочернему актору. Таким образом, даже если наследник упадет, это не повляет на родителя, который отвечает за важные данные.
+Благодаря такому подходу мы **локазилировали ошибку** и ограничили ее распространение по системе.
 
-Here's an example of how we could structure the actor hierarchy to safely accomplish the goal:
+Вот пример иерархии, которая может помощь для решения подобной задачи:
 
 ![Akka: User actor hierarchy](Images/error_kernel.png)
 
-Recall that we could have many clones of this exact structure working in parallel, with one clone per game we are tracking. **And we wouldn't have to write any new code to scale it out!** Beautiful.
+Обратите внимание, что у нас может быть сколько угодно копий этой структуры, допустим по одной копии на каждую игру за которой мы следим. **И нам не придется писать новый код для горизонтального масштабирования!** Красота.
 
-> You may also hear people use the term "error kernel," which refers to how much of the system is affected by the failure. You may also hear "error kernel pattern," which is just fancy shorthand for the approach I just explained where we push dangerous behavior to child actors to isolate/protect the parent.
+> Вы можете услышать, как люди употребляют термин "ядро ошибки", имея ввиду какая часть системы подвержена влиянию ошибки. Также говорят "паттерн ядро ошибки", пордазумевая подход который я только что описал. Мы отодвигаем опасное поведение как можно дальше по иерархии и изолируем/защищаем родительские процессы.
 
-## Exercise
+## Упражнение
 To start off, we need to do some upgrading of our system. We are going to add in the components which will enable our actor system to actually monitor a file for changes. We have most of the classes we need, but there are a few pieces of utility code that we need to add.
+Для начала, немного проапгрейдим нашу системц. Мы собираемся добавить компоненты, которые позволят нашей программе действительно отслеживать изменения в файлах. Большинство задач уже решены, нам нужны некоторые системные функции, котороые позволят все собрать в кучу.
 
-We're almost done! We really just need to add the `TailCoordinatorActor`, `TailActor`, and the `FileObserver`.
+Мы почти готовы к запуску! Осталось добавить `TailCoordinatorActor`, `TailActor`, и `FileObserver`.
 
-The goal of this exercise is to show you how to make a parent/child actor relationship.
+Цель данного упражнения - показать вам как создавать связь родитель/дети.
 
-### Phase 1: A quick bit of prep
-#### Replace `ValidationActor` with `FileValidatorActor`
-Since we're shifting to actually looking at files now, go ahead and replace `ValidationActor` with `FileValidatorActor`.
+### Фаза 1: Небольшая подготовка
+#### Замените `ValidationActor` на `FileValidatorActor`
+Поскольку мы собираемся работать с файлами, замените `ValidationActor` на `FileValidatorActor`.
 
-Add a new class, `FileValidatorActor`, with [this code](Completed/FileValidatorActor.cs):
+Добавьте новый класс, `FileValidatorActor`, при помощи [этого кода](Completed/FileValidatorActor.cs):
 
 ```csharp
 // FileValidatorActor.cs
@@ -310,7 +314,7 @@ namespace WinTail
         }
 
         /// <summary>
-        /// Checks if file exists at path provided by user.
+        /// Проверяет, существует ли указанный пользователем файл
         /// </summary>
         /// <param name="path"></param>
         /// <returns></returns>
