@@ -32,20 +32,20 @@
 
 Акторы верхнего уровня обычно являются супервизорами, и отправляют рискованные операции как можно ниже по иерархии. Таким образом система может минимизировать риск, и обеспечить восстановление от ошибок без падения всей системы.
 
-Both of these concepts are important, but for the rest of this lesson we'll put our emphasis on how actor systems use hierarchies to be resilient.
+Обе концепции важны но в этом уроке мы сделаем акцент на том, как системы акторов используют иерархии для обеспечения стабильности.
 
-How is this achieved? **Supervision.**
+Как они этого добиваются? При помощи **Супервизоров**
 
-### What is supervision? Why should I care?
-Supervision is the basic concept that allows your actor system to quickly isolate and recover from failures.
+### Что такое супервизоры ? Какое мне до них дело ?
+Супервизоры это базовая концепция, коотрая позволяет вашей системе акторов быстро изолировать ошибки и восстанавливаться после сбоев.
 
-Every actor has another actor that supervises it, and helps it recover when errors occur. This is true from the top all the way to the bottom of the hierarchy.
+У каждого актора есть другой актор(супервизор), который присматривает за ним. Также супервизор помогает вернуться в нормальное состояние после ошибки. Это правило справедливо для всей иерархии акторов сверху донизу.
 
-This supervision ensures that when part of your application encounters an unexpected failure (unhandled exception, network timeout, etc.), that failure will be contained to only the affected part of your actor hierarchy.
+Идея супервизоров позволяет ганатировать, что если часть вашего приложения свалится с неожиданной ошибкой(необработанное исключение, таймаут сети, и т.п.), ошибка повлияет только на часть акторов в вашей иерархии.
 
-All other actors will keep on working as though nothing happened. We call this "failure isolation" or "containment."
+Остальные акторы будут продолжать работать в нормальном режиме. Мы называем это "изоляцией ошибок" или "политикой сдерживания".
 
-How is this accomplished? Let's find out&hellip;
+Как это работает? Давайте выясним&hellip;
 
 ### Actor Hierarchies
 First, a key point: Every actor has a parent, and some actors have children. Parents supervise their children.
