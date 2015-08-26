@@ -1,4 +1,4 @@
-# Lesson 1.5: Looking up Actors by Address with `ActorSelection`
+# Урок 1.5: Урок 5: Ищем акторов по адресу при помощи `ActorSelection`
 Welcome to lesson 5! Wow, we've come a long way together. First, just **take a quick moment to appreciate that, and give yourself credit for investing your time and energy into your craft**.
 
 Mmm, that was nice.
