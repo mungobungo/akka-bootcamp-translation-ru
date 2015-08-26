@@ -47,14 +47,14 @@
 
 Как это работает? Давайте выясним&hellip;
 
-### Actor Hierarchies
-First, a key point: Every actor has a parent, and some actors have children. Parents supervise their children.
+### иерархия акторов
+Для начала ключевая мысль: У каждого актора есть родитель, у некоторых акторов есть дочерние акторы. Родители являются супервизоварми и присматривают за своими детьми.
 
-Since parents supervise their children, this means that ***every actor has a supervisor, and every actor can also BE a supervisor.***
+Поскольку родители являются супервизорами для своих детей, это означает что *** у кажого актора есть супервизор, и каждый актор МОЖЕТ БЫТЬ супервизором. ***
 
-Within your actor system, actors are arranged into a hierarchy. This means there are "top level" actors, which essentially report directly to the `ActorSystem` itself, and there are "child" actors, which report to other actors.
+В рамках вашей системы акторов, все акторы выстроены в иерархию. Это означает, что есть акторы "верхнего уровня", которые отчитываются напрямую преед `ActorSystem`, и есть "дочерние" акторы, которые отчитываются перед другими акторами.
 
-The overall hierarchy looks like this (we'll go through piece by piece in a moment):
+Полная картина иерархии выглядит следующим образом (Скоро мы разберем эту картину по кусочкам):
 ![Petabridge Akka.NET Bootcamp Lesson 1.3 Actor Hierarchies](Images/hierarchy_overview.png)
 
 
