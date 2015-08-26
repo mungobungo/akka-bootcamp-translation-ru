@@ -1,189 +1,197 @@
-# Lesson 1.4: Child Actors, Actor Hierarchies, and Supervision
-This lesson will make a big jump forward in both the capabilities of our codebase, and in your understanding of how the actor model works.
+# Урок 1.4: Дочерние акторы, иерархия акторов, супервизоры
+Этот урок будет гигантским рывком как в расширении возможностей нашей программы, так и в нашем понимании принципов работы модели акторов.
 
-This lesson is our most challenging one yet, so let's get right to it!
+Это один из самых сложных уроков, поэтому будьте готовы!
 
-## Key concepts / background
-Before we get into the details of the actor hierarchy itself, let's stop and ask: why do we need a hierarchy at all?
+## Ключевые идеи / общая информация
+Перед тем как мы погрузимся в детали иерархии акоторов, остановимся и зададим себе вопрос : зачем нам в принципе нужна иерархия?
 
-There are two key reasons actors exist in a hierarchy:
+Вот две ключевых причины существования иерархии:
 
-1. To atomize work and turn massive amounts of data into manageable chunks
-1. To contain errors and make the system resilient
+1. Разбить работу на независимые части и поделить огромные массивы данных на удобоваримые куски
+1. Ограничить влияние ошибок и сделать систему стабильной
 
-### Hierarchies atomize work
-Having a hierarchy helps our system to break down work into smaller and smaller pieces, and to allow for different skill specializations at different levels of the hierarchy.
+### Иерархии позволяют разбить задачу на части
 
-A common way this is realized in an actor systems is that large data streams get atomized, broken down over and over again until they are small and can easily be dealt with by a small code footprint.
+Иерарзия позволяет дробить нашу систему на все меньшие и меньшие части. Разные уровни иерархии могут отвечать за разный функционал (совсем как в жизни!).
 
-Let's take Twitter as an example (users of JVM Akka). Using Akka, Twitter is able to break up their massive ingestion of data into small, manageable streams of information that they can react to. For instance - Twitter can break up their giant firehose of tweets into individual streams for the timeline of each user currently on the site, and they can use Akka to push messages that have arrived for that user into their stream via websocket / etc.
+В основном в актор-ориентированых приложениях огромные потоки данных разбиваются на маленькие ручейки, с которыми можно легко разобраться небольшим куском кода.
 
-What's the pattern? Take a lot of work. Break it down recursively until it is easily dealt with. Respond as needed.
 
-### Hierarchies enable resilient systems
-A hierarchy allows for different levels of risk and specialization to exist that could not otherwise.
+Возьмем к примеру Twitter (они используют JVM Akka). При помощи Akka, Twitter может расперделить огромный объем входящих данных на небольшие блоки, которые можно обработать. Например - Twitter дробит чудовищное число твитов на инидвидуальные потоки для каждого пользователя, который в данный момент находится на сайте. Каждый поток доставляется пользователи при помощи вебсокетов.
 
-Think of how an army works. An army has a general setting strategy and overseeing everything, but she is usually not going to be on the front line of the battle where there is the most risk. However, she has wide leverage and guides everything. At the same time, there are lower-ranking soldiers who are on the front lines, doing risky operations and carrying out the orders that they receive.
+Видите общую идею? Возмите гродадный кусок работы. Рекурсивно разбейте его на части, легкие для понимания и обработки. Готово.
 
-This is exactly how an actor system operates.
+### Иерархии позволяют делать стабильные системы
+Иерархии позволюят гибко ограничивать уровень риска и ответствености.
 
-Higher-level actors are more supervisional in nature, and this allows the actor system to push risk down and to the edges. By pushing risky operations to the edges of the hierarchy, the system can isolate risk and recover from errors without the whole system crashing.
 
-Both of these concepts are important, but for the rest of this lesson we'll put our emphasis on how actor systems use hierarchies to be resilient.
+Подумайте о том, как работает армия. В армии есть генерал, который задает стратегию и контролирует поле боя. Но обычно он не идет на передовую, подвергая свою жизнь риску. Но тем не менее у него очень широкие полномочия и возможности. В то же вермя есть рядовые солдаты, которые выполняют рискованные операции на передовой и выполняют те приказы, которые они получили.
 
-How is this achieved? **Supervision.**
+Система акторов работает точно таким же образом.
 
-### What is supervision? Why should I care?
-Supervision is the basic concept that allows your actor system to quickly isolate and recover from failures.
+Акторы верхнего уровня обычно являются супервизорами, и отправляют рискованные операции как можно ниже по иерархии. Таким образом система может минимизировать риск, и обеспечить восстановление от ошибок без падения всей системы.
 
-Every actor has another actor that supervises it, and helps it recover when errors occur. This is true from the top all the way to the bottom of the hierarchy.
+Обе концепции важны но в этом уроке мы сделаем акцент на том, как системы акторов используют иерархии для обеспечения стабильности.
 
-This supervision ensures that when part of your application encounters an unexpected failure (unhandled exception, network timeout, etc.), that failure will be contained to only the affected part of your actor hierarchy.
+Как они этого добиваются? При помощи **Супервизоров**
 
-All other actors will keep on working as though nothing happened. We call this "failure isolation" or "containment."
+### Что такое супервизоры ? Какое мне до них дело ?
+Супервизоры это базовая концепция, коотрая позволяет вашей системе акторов быстро изолировать ошибки и восстанавливаться после сбоев.
 
-How is this accomplished? Let's find out&hellip;
+У каждого актора есть другой актор(супервизор), который присматривает за ним. Также супервизор помогает вернуться в нормальное состояние после ошибки. Это правило справедливо для всей иерархии акторов сверху донизу.
 
-### Actor Hierarchies
-First, a key point: Every actor has a parent, and some actors have children. Parents supervise their children.
+Идея супервизоров позволяет ганатировать, что если часть вашего приложения свалится с неожиданной ошибкой(необработанное исключение, таймаут сети, и т.п.), ошибка повлияет только на часть акторов в вашей иерархии.
 
-Since parents supervise their children, this means that ***every actor has a supervisor, and every actor can also BE a supervisor.***
+Остальные акторы будут продолжать работать в нормальном режиме. Мы называем это "изоляцией ошибок" или "политикой сдерживания".
 
-Within your actor system, actors are arranged into a hierarchy. This means there are "top level" actors, which essentially report directly to the `ActorSystem` itself, and there are "child" actors, which report to other actors.
+Как это работает? Давайте выясним&hellip;
 
-The overall hierarchy looks like this (we'll go through piece by piece in a moment):
+### иерархия акторов
+Для начала ключевая мысль: У каждого актора есть родитель, у некоторых акторов есть дочерние акторы. Родители являются супервизоварми и присматривают за своими детьми.
+
+Поскольку родители являются супервизорами для своих детей, это означает что *** у кажого актора есть супервизор, и каждый актор МОЖЕТ БЫТЬ супервизором. ***
+
+В рамках вашей системы акторов, все акторы выстроены в иерархию. Это означает, что есть акторы "верхнего уровня", которые отчитываются напрямую преед `ActorSystem`, и есть "дочерние" акторы, которые отчитываются перед другими акторами.
+
+Полная картина иерархии выглядит следующим образом (Скоро мы разберем эту картину по кусочкам):
 ![Petabridge Akka.NET Bootcamp Lesson 1.3 Actor Hierarchies](Images/hierarchy_overview.png)
 
 
-### What are the levels of the hierarchy?
-#### The base of it all: The "Guardians"
-The "guardians" are the root actors of the entire system.
+### Как разобраться в этой иерархии?
+#### Основа всего -  "Guardians" они же Хранитель
+ "хранители" это самые главные акторы во всей системе.
 
-I'm referring to these three actors at the very top of the hierarchy:
+Я имею ввиду этих троих на вершине пищевой цепочки:
 ![Petabridge Akka.NET Bootcamp Lesson 1.3 Actor Hierarchies](Images/guardians.png)
 
-##### The `/` actor
+##### Актор `/` 
 
-The `/` actor is the base actor of the entire actor system, and may also be referred to as "The Root Guardian." This actor supervises the `/system` and `/user` actors (the other "Guardians").
+Актор по имине `/` - основной актор всей системы акторов. Его можно назвать "Главным хранителем." Он  контролирует акторов `/system` и `/user`  (других "хранителей").
 
-All actors require another actor as their parent, except this one. This actor is also sometimes called the "bubble-walker" since it is "out of the bubble" of the normal actor system. For now, don't worry about this actor.
+Всем акторам кроме этого нужны родители. Он находится вне рамок системы координат обычных акторов. Но подробно обсуждать его мы не будем.
 
-##### The `/system` actor
+##### Актор `/system`
 
-The `/system` actor may also be referred to as "The System Guardian". The main job of this actor is to ensure that the system shuts down in an orderly manner, and to maintain/supervise other system actors which implement framework level features and utilities (logging, etc). We'll discuss the system guardian and the system actor hierarchy in a future post.
+Актор `/system` - это "Хранитель Системы". Основаная его забота - обеспечить безопасное выключение системы. Также он контролирует акторов, которые обеспечивают дополнительные возможности системы (логирование и т.п.). 
 
-##### The `/user` actor
+##### Актор `/user` 
 
-This is where the party starts! And this is where you'll be spending all your time as a developer.
+Вот где начинается реальная движуха! И основное время разработки  вы проведете именно здесь .
 
-The `/user` actor may also be referred to as "The Guardian Actor". But from a user perspective, `/user` is the root of your actor system and is usually just called the "root actor."
+Актора `/user` можно назвать "Хранитель Акторов". С этой точки зрения, `/user` является корневым элеметом вашей системы акторов, и обычно его называеют "корневым актором."
 
-> Generally, "root actor" refers to the `/user` actor.
+> Обычно выражение "корневой актор" относится к `/user`.
 
-As a user, you don't really need to worry too much about the Guardians. We just have to make sure that we use supervision properly under `/user` so that no exception can bubble up to the Guardians and crash the whole system.
+Как пользователю, вам не часть придется иметь дело с Хранителями. Наша основная задача - обеспечить корректную работу супервизоров ниже `/user`,  так чтобы исключения не могли добраться до Хранителей и обрушить систему.
 
-
-#### The `/user` actor hierarchy
-This is the meat and potatoes of the actor hierarchy: all of the actors you define in your applications.
+#### Иерархия под началом `/user`
+Вот альфа и омега всей иерархии акторов. Все ваши акторы так или иначе подчинаются `/user`.
 ![Akka: User actor hierarchy](Images/user_actors.png)
 
-> The direct children of the `/user` actor are called "top level actors."
+> Прямые наследники `/user` называются "верхнеуровневыми акторами."
 
-Actors are always created as a child of some other actor.
+Акторы всегда создаются как наследники другого актора.
 
-Whenever you make an actor directly from the context of the actor system itself, that new actor is a top level actor, like so:
+Когда вы создаете актора в контексте самой системы акторов, этот актор становится верхнеуровневым актором:
 
 ```csharp
-// create the top level actors from above diagram
+// создаем акторов вверху диаграммы
 IActorRef a1 = MyActorSystem.ActorOf(Props.Create<BasicActor>(), "a1");
 IActorRef a2 = MyActorSystem.ActorOf(Props.Create<BasicActor>(), "a2");
 ```
 
-Now, let's make child actors for `a2` by creating them inside the context of `a2`, our parent-to-be:
+Теперь добавим наследников `a2`,  создавая их в контексте нашего будущего родителя:
 
 ```csharp
-// create the children of actor a2
-// this is inside actor a2
+// создаем наследников a2
+// этот код находится внутри a2
 IActorRef b1 = Context.ActorOf(Props.Create<BasicActor>(), "b1");
 IActorRef b2 = Context.ActorOf(Props.Create<BasicActor>(), "b2");
 ```
 
-#### Actor path == actor position in hierarchy
-Every actor has an address. To send a message from one actor to another, you just have to know it's address (AKA its "ActorPath"). This is what a full actor address looks like:
+#### Адрес актора == позиция актора в иерархии
+У каждого актора есть свой адрес. Чтобы послать сообщение от одного актора к другому, вам необходимо знать этот адрес ("ActorPath"). Вот как выглядит полный адрес актора:
 
 ![Akka.NET actor address and path](Images/actor_path.png)
 
-> *The "Path" portion of an actor address is just a description of where that actor is in your actor hierarchy. Each level of the hierarchy is separated by a single slash ('/').*
+> * "Путь" - это часть адреса актора, которая описыает его местоположение в иерархии. Каждый уровень иерархии разделяется слешом ('/').*
 
-For example, if we were running on `localhost`, the full address of actor `b2` would be `akka.tcp://MyActorSystem@localhost:9001/user/a2/b2`.
+Например, если мы запустили приложение на `localhost`, полным адресом актора `b2` будет `akka.tcp://MyActorSystem@localhost:9001/user/a2/b2`.
 
-One question that comes up a lot is, "Do my actor classes have to live at a certain point in the hierarchy?" For example, if I have an actor class, `FooActor`—can I only deploy that actor as a child of `BarActor` on the hierarchy? Or can I deploy it anywhere?
+Вопрос который вертится на языке - "Должен ли актор обязательно находиться в определенной точке иерархии"?
+Например у меня есть `FooActor`, должен ли он обязательно быть наследником  `BarActor`, или его можно запихнуть куда угодно?
 
-The answer is **any actor may be placed anywhere in your actor hierarchy**.
+Ответ - **Любой актор может занять любое место в иерархии**.
 
-> *Any actor may be placed anywhere in your actor hierarchy.*
-
-Okay, now that we've got this hierarchy business down, let's do something interesting with it. Like supervising!
-
-### How supervision works in the actor hierarchy
-Now that you know how actors are organized, know this: actors supervise their children. *But, they only supervise the level that is immediately below them in the hierarchy (actors do not supervise their grandchildren, great-grandchildren, etc).*
-
-> Actors only supervise their children, the level immediately below them in the hierarchy.
-
-#### When does supervision come into play? Errors!
-When things go wrong, that's when! Whenever a child actor has an unhandled exception and is crashing, it reaches out to its parent for help and to tell it what to do.
-
-Specifically, the child will send its parent a message that is of the `Failure` class. Then it's up to the parent to decide what to do.
-
-#### How can the parent resolve the error?
-There are two factors that determine how a failure is resolved:
-
-1. How the child failed (what type of `Exception` did the child include in its `Failure` message to its parent.)
-1. What Directive the parent actor executes in response to a child `Failure`. This is determined by the parent's `SupervisionStrategy`.
-
-##### Here's the sequence of events when an error occurs:
-
-1. Unhandled exception occurs in child actor (`c1`), which is supervised by its parent (`b1`).
-2. `c1` suspends operations.
-3. The system sends a `Failure` message from `c1` to `b1`, with the `Exception` that was raised.
-4. `b1` issues a directive to `c1` telling it what to do.
-5. Life goes on, and the affected part of the system heals itself without burning down the whole house. Kittens and unicorns, handing out free ice cream and coffee to be enjoyed while relaxing on a pillowy rainbow. Yay!
+> *Любой актор может занять любое место в иерархии.*
 
 
-##### Supervision directives
-When it receives an error from its child, a parent can take one of the following actions ("directives"). The supervision strategy maps different exception types to these directives, allowing you to handle different types of errors as appropriate.
+Хорошо, теперь когда мы разобрались с иерархией, давайте сделаем что-то полезное. Например супервизоров!
 
-Types of supervision directives (i.e. what decisions a supervisor can make):
+### Как супервизоры работают в иерархии акторов?
 
-- **Restart** the child (default): this is the common case, and the default.
-- **Stop** the child: this permanently terminates the child actor.
-- **Escalate** the error (and stop itself): this is the parent saying "I don't know what to do! I'm gonna stop everything and ask MY parent!"
-- **Resume** processing (ignores the error): you generally won't use this. Ignore it for now.
+Теперь когда вы в курсе огранизации акторов, вы знаете что акторы контролируют(являются супервизорами) своих потомков. *Но они являются супервизорами акторов ровно на один уровень ниже. они не контролируют своих внуков, правнуков и т.п.)*
 
-> *The critical thing to know here is that ***whatever action is taken on a parent propagates to its children***. If a parent is halted, all its children halt. If it is restarted, all its children restart.*
 
-##### Supervision strategies
-There are two built-in supervision strategies:
+> Акторы контролируют только своих детей, ровно на один уровень вниз по иерархии.
 
-1. One-For-One Strategy (default)
-2. All-For-One Strategy
+#### А когда супервизоры вступают в игру? В случае ошибок!
+Когда что-то идет не так с этим разбираются супервизоры. Если дочерний актор выбрасывает необработанное исключение и падает, это исключение ловит родитель и принимает решение о том, что делать дальше.
 
- The basic difference between these is how widespread the effects of the error-resolution directive will be.
+В частности, наследник может послать родителю с ообщению с типом ошибки (`Failure`), которая произошла. 
 
-**One-For-One** says that that the directive issued by the parent only applies to the failing child actor. It has no effect on the siblings of the failing child. This is the default strategy if you don't specify one. (You can also define your own custom supervision strategy.)
+#### Каким образом родительский актор разбирается с ошибкой?
 
-**All-For-One** says that that the directive issued by the parent applies to the failing child actor AND all of its siblings.
+Вот два основных фактора влияющих на то, как разрешится проблема:
 
-The other important choice you make in a supervision strategy is how many times a child can fail within a given period of time before it is shut down (e.g. "no more than 10 errors within 60 seconds, or you're shut down").
+1. В зависимости от того, как именно упал дочерний актор (какой `Exception` указан в сообщении `Failure` )
+1. Какую директиву использует родитель в ответ на  `Failure` наследника. Это определяется стратегией супервизора (`SupervisionStrategy`).
 
-Here's an example supervision strategy:
+##### В случае возникновения исключения события развиваются следующим образом:
+
+1. Необработанное исключение возникает в акторе (`c1`), за которым наблюдает его родитель (`b1`).
+2. `c1` останавливается.
+3. Система посылает сообщение `Failure` от `c1` к `b1`, с указанием исключения(`Exception`) которое произошло.
+4. На основании директивы `b1` дает указание `c1` о дальнейших действиях.
+5. Жизнь идет своим чередом, часть системы которая поломалась самоисцелилась, не уничтожив при этом вселенную. Котята и единороги, получив бесплатное мороженое и кофе балдят на радуге. Ня!
+
+
+##### Директивы супервизоров
+Когда в дочернем акторе случается ошибка, родитель может принять решение на основе директивы ("directives"). Стратегия супервизора находит директиву соответствующую типу исклюяения, позволяя обрабатывать разные исключения подобающим образом.
+
+Список доступных директив (т.е. какие решения может принять супервизор):
+
+- **Restart** перезапуск дочернего актора: наиболее популярный вариант, применяемый по умолчанию.
+- **Stop**  полная остановка дочернего актора.
+- **Escalate**  эскалация ошибки  (и остановка супервизора): родительский актор-супервизор говорит "Я не знаю что делать дальше! Я бросаю все и предаю управление СВОЕМУ супервизору"
+- **Resume** продолжаем работу(игнорируем ошибку) : в подавляющем большинстве случаев вам это не понадобится. Пока проигнорируем.
+
+> *Критически важный момент *** любое действие над родителем распространяется и на его потомков***. Если родительский актор остановлен, его дочерние акторы также будут остановлены. Если родитель перезапущен, наследники тоже будут перезапущены.*
+
+##### Стратегии супервизоров
+Сущуствует 2 стратегии для супервизоров:
+
+1. One-For-One (Каждый-сам-за-себя), которая применяется по умолчанию
+2. All-For-One (Все-за-одного)
+
+ Разница заключается в том, насколько широко будут распространяться действия по разрешению ошибки.
+ 
+
+**One-For-One** (Каждый-сам-за-себя) говорит о том, что директива, которую применяет супервизор будет относиться только к сбойному актору. Другие потомки супервизора не будут затронуты. Если вы не укажете стратеги, по умолчанию применится One-For-One . (Существует возможность создать собственную стратегию для супервизора.)
+
+**All-For-One** (Все-за-одного) говорит, что директива будет распространяться на актора, в котором произошла ошибка, *а также на всех остальных* потомков супервизора.
+
+Дополнительный важный выбор, который вам предствоит сделать, сколько раз дочерний актор может сбоить в течение заданного промежутка времени, пока его не отключат. (например, "не более 10 ошибок в течение 60 секунд, или мы тебя вырубим").
+
+Пример стратегии супервизора:
 
 ```csharp
 public class MyActor : UntypedActor
 {
-    // if any child of MyActor throws an exception, apply the rules below
-    // e.g. Restart the child, if 10 exceptions occur in 30 seconds or
-    // less, then stop the actor
+    // Если какой-то наследник MyActor-а выбросит исключение, применяем следующие правила
+    // Перезапускаем, если число исключений меньше 10 за 30 секунд
+    // в противном случае останавливаем поломанного актора
     protected override SupervisorStrategy SupervisorStrategy()
     {
         return new OneForOneStrategy(// or AllForOneStrategy
@@ -191,17 +199,17 @@ public class MyActor : UntypedActor
             withinTimeRange: TimeSpan.FromSeconds(30),
             localOnlyDecider: x =>
             {
-                // Maybe ArithmeticException is not application critical
-                // so we just ignore the error and keep going.
+                // Может быть ArithmeticException не критично 
+                // для нашего приложения, поэтому просто продолжаем.
                 if (x is ArithmeticException) return Directive.Resume;
 
-                // Error that we have no idea what to do with
+                // А с этим исключением мы понятия не имеем что делать
                 else if (x is InsanelyBadException) return Directive.Escalate;
 
-                // Error that we can't recover from, stop the failing child
+                // Это исключение мы не можем толком обработать, поэтому остановим актора
                 else if (x is NotSupportedException) return Directive.Stop;
 
-                // otherwise restart the failing child
+                // Во всех остальных случаях просто перезапустим блудного сына
                 else return Directive.Restart;
             });
     }
@@ -210,41 +218,43 @@ public class MyActor : UntypedActor
 }
 ```
 
-### What's the point? Containment.
-The whole point of supervision strategies and directives is to contain failure within the system and self-heal, so the whole system doesn't crash. How do we do this?
+### К чему эти приседания? Политика сдерживания.
+Весь смыл стратегий супервизора вместе с директивами заключается в возможности ограничить ошибку в рамках системы и дать возможность ей самоисцелиться. Таким образом система в целом не упадет. Но как мы этого добьемся?
 
-We push potentially-dangerous operations from a parent to a child, whose only job is to carry out the dangerous task.
+Мы спускаем потенциально опасные операции вниз по иерархии, до тех акторов, которые выполняют исключетельно одну опасную задачу.
 
-For example, let's say we're running a stats system during the World Cup, that keeps scores and player statistics from a bunch of games in the World Cup.
+Например, мы запустили систему статистики во время ЧМ по футболу. Эта система позволяет смотреть результаты матчей и статистику по игрокам.
 
-Now, being the World Cup, there could be huge demand on that API and it could get throttled, start rate-limiting, or just plain crash (no offense FIFA, I love you guys and the Cup). We'll use the epic Germany-Ghana match as an example.
+Поскольку это чемпионат мира, может статься, что API может быть ограничено по количество запросов, может отвечать не быстро, а может и просто упасть. (Без обид ФИФА, я люблю вас ребята вместе с ЧМ). Для примера возьмем эпичный матч Германия-Гана.
 
-But our scorekeeper has to periodically update its data as the game progresses. Let's assume it has to call to an external API maintained by FIFA to get the data it needs.
+Наш сервис хранения резульаттов матчей должен периодически обновляться в процессе игры. Давайте предположим, что он дергает внешиний API который используется ФИФА для получения этих данных.
 
-***This network call is dangerous!*** If the request raises an error, it will crash the actor that started the call. So how do we protect ourselves?
+***Обращение по сети опасная вещь!*** Если запрос завершится с ошибкой, актор, который выполнял его остановится. Так как же нам защититься от подобного?
 
-We keep the stats in a parent actor, and push that nasty network call down into a child actor. That way, if the child crashes, it doesn't affect the parent, which is holding on to all the important data. By doing this, we are **localizing the failure** and keeping it from spreading throughout the system.
+Мы будем хранить всю статистику в родителе, а опасный сетевой вызов дадим на откуп дочернему актору. Таким образом, даже если наследник упадет, это не повляет на родителя, который отвечает за важные данные.
+Благодаря такому подходу мы **локазилировали ошибку** и ограничили ее распространение по системе.
 
-Here's an example of how we could structure the actor hierarchy to safely accomplish the goal:
+Вот пример иерархии, которая может помощь для решения подобной задачи:
 
 ![Akka: User actor hierarchy](Images/error_kernel.png)
 
-Recall that we could have many clones of this exact structure working in parallel, with one clone per game we are tracking. **And we wouldn't have to write any new code to scale it out!** Beautiful.
+Обратите внимание, что у нас может быть сколько угодно копий этой структуры, допустим по одной копии на каждую игру за которой мы следим. **И нам не придется писать новый код для горизонтального масштабирования!** Красота.
 
-> You may also hear people use the term "error kernel," which refers to how much of the system is affected by the failure. You may also hear "error kernel pattern," which is just fancy shorthand for the approach I just explained where we push dangerous behavior to child actors to isolate/protect the parent.
+> Вы можете услышать, как люди употребляют термин "ядро ошибки", имея ввиду какая часть системы подвержена влиянию ошибки. Также говорят "паттерн ядро ошибки", пордазумевая подход который я только что описал. Мы отодвигаем опасное поведение как можно дальше по иерархии и изолируем/защищаем родительские процессы.
 
-## Exercise
-To start off, we need to do some upgrading of our system. We are going to add in the components which will enable our actor system to actually monitor a file for changes. We have most of the classes we need, but there are a few pieces of utility code that we need to add.
+## Упражнение
 
-We're almost done! We really just need to add the `TailCoordinatorActor`, `TailActor`, and the `FileObserver`.
+Для начала, немного проапгрейдим нашу системц. Мы собираемся добавить компоненты, которые позволят нашей программе действительно отслеживать изменения в файлах. Большинство задач уже решены, нам нужны некоторые системные функции, котороые позволят все собрать в кучу.
 
-The goal of this exercise is to show you how to make a parent/child actor relationship.
+Мы почти готовы к запуску! Осталось добавить `TailCoordinatorActor`, `TailActor`, и `FileObserver`.
 
-### Phase 1: A quick bit of prep
-#### Replace `ValidationActor` with `FileValidatorActor`
-Since we're shifting to actually looking at files now, go ahead and replace `ValidationActor` with `FileValidatorActor`.
+Цель данного упражнения - показать вам как создавать связь родитель/дети.
 
-Add a new class, `FileValidatorActor`, with [this code](Completed/FileValidatorActor.cs):
+### Фаза 1: Небольшая подготовка
+#### Замените `ValidationActor` на `FileValidatorActor`
+Поскольку мы собираемся работать с файлами, замените `ValidationActor` на `FileValidatorActor`.
+
+Добавьте новый класс, `FileValidatorActor`, при помощи [этого кода](Completed/FileValidatorActor.cs):
 
 ```csharp
 // FileValidatorActor.cs
@@ -304,7 +314,7 @@ namespace WinTail
         }
 
         /// <summary>
-        /// Checks if file exists at path provided by user.
+        /// Проверяет, существует ли указанный пользователем файл
         /// </summary>
         /// <param name="path"></param>
         /// <returns></returns>
@@ -316,30 +326,30 @@ namespace WinTail
 }
 ```
 
-You'll also want to make sure to update the `Props` instance in `Main` that references the class:
+Также убедимся, что мы обновлии `Props` в `Main`, который ссылается на наш класс:
 
 ```csharp
 // Program.cs
 Props validationActorProps = Props.Create(() => new FileValidatorActor(consoleWriterActor));
 ```
 
-#### Update `DoPrintInstructions`
-Just making a slight tweak to our instructions here, since we'll be using a text file on disk going forward instead of prompting the user for input.
+#### Обновим `DoPrintInstructions`
+Немного обновим наши инструкции, поскольку теперь вместо пользовательсого ввода будет использоваться файл.
 
-Update `DoPrintInstructions()` to this:
+Исправьте `DoPrintInstructions()` следующим образом:
 
 ```csharp
 // ConsoleReaderActor.cs
 private void DoPrintInstructions()
 {
-    Console.WriteLine("Please provide the URI of a log file on disk.\n");
+    Console.WriteLine("пожалуйста укажите URI лог-файла на диске.\n");
 }
 ```
 
-#### Add `FileObserver`
-This is a utility class that we're providing for you to use. It does the low-level work of actually watching a file for changes.
+#### Добавляем `FileObserver`
+Этот класс мы будем использовать для отслеживания изменений в файле.
 
-Create a new class called `FileObserver` and type in the code for [FileObserver.cs](Completed/FileObserver.cs). If you're running this on Mono, note the extra environment variable that has to be uncommented in the `Start()` method:
+Создайте класс `FileObserver` и продублируйте код из [FileObserver.cs](Completed/FileObserver.cs). Если вы запускаете проект под Mono, раскомментируйте определение переменной окружения в методе `Start()`:
 
 ```csharp
 // FileObserver.cs
@@ -350,7 +360,7 @@ using Akka.Actor;
 namespace WinTail
 {
     /// <summary>
-    /// Turns <see cref="FileSystemWatcher"/> events about a specific file into messages for <see cref="TailActor"/>.
+    /// Превращает события от <see cref="FileSystemWatcher"/> в собщения для <see cref="TailActor"/>.
     /// </summary>
     public class FileObserver : IDisposable
     {
@@ -369,30 +379,30 @@ namespace WinTail
         }
 
         /// <summary>
-        /// Begin monitoring file.
+        /// Начинаем мониторить файл.
         /// </summary>
         public void Start()
         {
-            // Need this for Mono 3.12.0 workaround
-            // Environment.SetEnvironmentVariable("MONO_MANAGED_WATCHER", "enabled"); // uncomment this line if you're running on Mono!
+            // Нужно как костыль для Mono 3.12.0 
+            // Environment.SetEnvironmentVariable("MONO_MANAGED_WATCHER", "enabled"); // раскомментируйте эту строку, если запускаете программу под Mono
 
-            // make watcher to observe our specific file
+            // начинаем наблюдать за файлом
             _watcher = new FileSystemWatcher(_fileDir, _fileNameOnly);
 
-            // watch our file for changes to the file name, or new messages being written to file
+            // нам интересны события изменения имени файла или добавления в него данных
             _watcher.NotifyFilter = NotifyFilters.FileName | NotifyFilters.LastWrite;
 
-            // assign callbacks for event types
+            // добавляем коллбеки
             _watcher.Changed += OnFileChanged;
             _watcher.Error += OnFileError;
 
-            // start watching
+            // начинаем наблюдать
             _watcher.EnableRaisingEvents = true;
 
         }
 
         /// <summary>
-        /// Stop monitoring file.
+        /// Останавливаем мониторинг файла.
         /// </summary>
         public void Dispose()
         {
@@ -400,7 +410,7 @@ namespace WinTail
         }
 
         /// <summary>
-        /// Callback for <see cref="FileSystemWatcher"/> file error events.
+        /// Коллбек для ошибок <see cref="FileSystemWatcher"/> .
         /// </summary>
         /// <param name="sender"></param>
         /// <param name="e"></param>
@@ -410,7 +420,7 @@ namespace WinTail
         }
 
         /// <summary>
-        /// Callback for <see cref="FileSystemWatcher"/> file change events.
+        /// Коллбек для изменений файла <see cref="FileSystemWatcher"/>.
         /// </summary>
         /// <param name="sender"></param>
         /// <param name="e"></param>
@@ -418,8 +428,8 @@ namespace WinTail
         {
             if (e.ChangeType == WatcherChangeTypes.Changed)
             {
-                // here we use a special ActorRefs.NoSender
-                // since this event can happen many times, this is a little microoptimization
+                // Мы используем специальную ссылку ActorRefs.NoSender
+                // небольшая микрооптимизация, поскольку событие может прийти несколько раз
                 _tailActor.Tell(new TailActor.FileWrite(e.Name), ActorRefs.NoSender);
             }
 
@@ -429,15 +439,15 @@ namespace WinTail
 }
 ```
 
-### Phase 2: Make your first parent/child actors!
-Great! Now we're ready to create our actor classes that will form a parent/child relationship.
+### Фаза 2: Создадим родственные связи между акторами!
+Супер! Теперь мы готовы создать акторов со связями..
 
-Recall that in the hierarchy we're going for, there is a `TailCoordinatorActor` that coordinates child actors to actually monitor and tail files. For now it will only supervise one child, `TailActor`, but in the future it can easily expand to have many children, each observing/tailing a different file.
+В иерархии, которую мы собираемся построить, `TailCoordinatorActor` координирует работу акторов которые отслеживают изменения и читают данны из файлов. Пока этот актор будет контролироть только `TailActor`, но в будущем можно добавить поддержки большего количества дочерних акторов, каждый из которых может следить/читать свой личный файл.
 
-#### Add `TailCoordinatorActor`
-Create a new class called `TailCoordinatorActor` in a file of the same name.
+#### Добавляем `TailCoordinatorActor`
+Создайте класс `TailCoordinatorActor` в файле с соответствующим именем.
 
-Add the following code, which defines our coordinator actor (which will soon be our first parent actor).
+Добавьте код, который описывает актора-координатора( и который скоро станет нашим первым родительским актором).
 
 ```csharp
 // TailCoordinatorActor.cs
@@ -450,7 +460,7 @@ namespace WinTail
     {
         #region Message types
         /// <summary>
-        /// Start tailing the file at user-specified path.
+        /// Начинаем читать изменения файла
         /// </summary>
         public class StartTail
         {
@@ -466,7 +476,7 @@ namespace WinTail
         }
 
         /// <summary>
-        /// Stop tailing the file at user-specified path.
+        /// Перестаем читать изменения в файле
         /// </summary>
         public class StopTail
         {
@@ -485,7 +495,7 @@ namespace WinTail
             if (message is StartTail)
             {
                 var msg = message as StartTail;
-                // YOU NEED TO FILL IN HERE
+                // КОД ДОБАВЛЯТЬ СЮДА
             }
 
         }
@@ -496,24 +506,24 @@ namespace WinTail
 
 ```
 
-#### Create `IActorRef` for `TailCoordinatorActor`
-In `Main()`, create a new `IActorRef` for `TailCoordinatorActor` and then pass it into `fileValidatorActorProps`, like so:
+#### Добавляем `IActorRef` на `TailCoordinatorActor`
+В `Main()`, создадим `IActorRef`, который ссылается на `TailCoordinatorActor` и передадим эту ссылку в `fileValidatorActorProps`. Как-то так:
 
 ```csharp
 // Program.Main
-// make tailCoordinatorActor
+// создаем tailCoordinatorActor
 Props tailCoordinatorProps = Props.Create(() => new TailCoordinatorActor());
 IActorRef tailCoordinatorActor = MyActorSystem.ActorOf(tailCoordinatorProps, "tailCoordinatorActor");
 
-// pass tailCoordinatorActor to fileValidatorActorProps (just adding one extra arg)
+// передаем tailCoordinatorActor в fileValidatorActorProps (просто добавляем еще один аргумент)
 Props fileValidatorActorProps = Props.Create(() => new FileValidatorActor(consoleWriterActor, tailCoordinatorActor));
 IActorRef validationActor = MyActorSystem.ActorOf(fileValidatorActorProps, "validationActor");
 ```
 
-#### Add `TailActor`
-Now, add a class called `TailActor` in its own file. This actor is the actor that is actually responsible for tailing a given file. `TailActor` will be created and supervised by `TailCoordinatorActor` in a moment.
+#### Добавляем `TailActor`
+Теперь создадим `TailActor`. Он будет отвечать за чтение последних изменений в файле. `TailActor` будет создан, и будет контролироваться `TailCoordinatorActor` одним движением руки.
 
-For now, add the following code in `TailActor.cs`:
+Добавьте следующий код в  `TailActor.cs`:
 
 ```csharp
 // TailActor.cs
@@ -524,14 +534,14 @@ using Akka.Actor;
 namespace WinTail
 {
     /// <summary>
-    /// Monitors the file at <see cref="_filePath"/> for changes and sends file updates to console.
+    /// Мониторит файл <see cref="_filePath"/> и отправляет изменения на консоль.
     /// </summary>
     public class TailActor : UntypedActor
     {
         #region Message types
 
         /// <summary>
-        /// Signal that the file has changed, and we need to read the next line of the file.
+        /// Сигнализирует о том, что файл изменился, и мы можем прочитать новую строку
         /// </summary>
         public class FileWrite
         {
@@ -544,7 +554,7 @@ namespace WinTail
         }
 
         /// <summary>
-        /// Signal that the OS had an error accessing the file.
+        /// Сигнализирует об ошибке операционной системы при попытке доступа к файлу.
         /// </summary>
         public class FileError
         {
@@ -560,7 +570,7 @@ namespace WinTail
         }
 
         /// <summary>
-        /// Signal to read the initial contents of the file at actor startup.
+        /// Сигнализирует о необходимости считать первичное содержимое файла при запуске
         /// </summary>
         public class InitialRead
         {
@@ -587,16 +597,16 @@ namespace WinTail
             _reporterActor = reporterActor;
             _filePath = filePath;
 
-            // start watching file for changes
+            // начинаем наблюдать за изменениями в файле
             _observer = new FileObserver(Self, Path.GetFullPath(_filePath));
             _observer.Start();
 
-            // open the file stream with shared read/write permissions (so file can be written to while open)
+            // открываем поток с правами на одновременные чтение/запись (чтобы в открытый файл можно было писать)
             _fileStream = new FileStream(Path.GetFullPath(_filePath), FileMode.Open, FileAccess.Read,
                 FileShare.ReadWrite);
             _fileStreamReader = new StreamReader(_fileStream, Encoding.UTF8);
 
-            // read the initial contents of the file and send it to console as first message
+            // Читаем первичное содержимое файла и выводим его на консоль
             var text = _fileStreamReader.ReadToEnd();
             Self.Tell(new InitialRead(_filePath, text));
         }
@@ -605,9 +615,9 @@ namespace WinTail
         {
             if (message is FileWrite)
             {
-                // move file cursor forward
-                // pull results from cursor to end of file and write to output
-                // (this is assuming a log file type format that is append-only)
+              
+                // считываем данные от текущего положения до конца файла
+                // (предполагается, что в лог-файл все изменения добавляются в конец)
                 var text = _fileStreamReader.ReadToEnd();
                 if (!string.IsNullOrEmpty(text))
                 {
@@ -630,12 +640,12 @@ namespace WinTail
 }
 ```
 
-#### Add `TailActor` as a child of `TailCoordinatorActor`
-Quick review: `TailActor` is to be a child of `TailCoordinatorActor` and will therefore be supervised by `TailCoordinatorActor`.
+#### Указываем, что `TailActor` является дочерним для `TailCoordinatorActor`
+Напоминалка: `TailActor` является наследником `TailCoordinatorActor`, и следовательно, `TailCoordinatorActor` будет супервизором, который контролирует `TailActor`.
 
-This also means that `TailActor` must be created in the context of `TailCoordinatorActor`.
+Это также означает, что `TailActor` должен быть создан в контексте `TailCoordinatorActor`.
 
-Go to `TailCoordinatorActor.cs` and replace `OnReceive()` with the following code to create your first child actor!
+Перейдите к `TailCoordinatorActor.cs` и замените `OnReceive()` кодом, которые создаст вашего первого дочернего актора!
 
 ```csharp
 // TailCoordinatorActor.OnReceive
@@ -644,24 +654,24 @@ protected override void OnReceive(object message)
     if (message is StartTail)
     {
         var msg = message as StartTail;
-		// here we are creating our first parent/child relationship!
-		// the TailActor instance created here is a child
-		// of this instance of TailCoordinatorActor
+		// Тут мы создаем пурвую связь родитель/наследник!
+		// экземпляр TailActor создан как потомок экземпляра TailCoordinatorActor
         Context.ActorOf(Props.Create(() => new TailActor(msg.ReporterActor, msg.FilePath)));
     }
 
 }
 ```
 
-### ***BAM!***
-You have just established your first parent/child actor relationship!
+### ***БУММММ!***
+Вы только что установили связь между родителем и дочерним актором!
 
-### Phase 3: Implement a `SupervisorStrategy`
-Now it's time to add a supervision strategy to your new parent, `TailCoordinatorActor`.
+### Фаза 3: Укажем `SupervisorStrategy`
 
-The default `SupervisorStrategy` is a One-For-One strategy ([docs](http://getakka.net/docs/Supervision#one-for-one-strategy-vs-all-for-one-strategy)) w/ a Restart directive ([docs](http://getakka.net/docs/Supervision#what-restarting-means)).
+Теперь самое время добавить стратегию супервизора `TailCoordinatorActor`-у.
 
-Add this code to the bottom of `TailCoordinatorActor`:
+По умолчанию `SupervisorStrategy` будет One-For-One (Каждый-сам-за-себя) ([docs](http://getakka.net/docs/Supervision#one-for-one-strategy-vs-all-for-one-strategy)) с директивой Restart ([docs](http://getakka.net/docs/Supervision#what-restarting-means)).
+
+Добавьте в конец `TailCoordinatorActor`:
 
 ```csharp
 // TailCoordinatorActor.cs
@@ -685,60 +695,61 @@ protected override SupervisorStrategy SupervisorStrategy()
 }
 ```
 
-### Phase 4: Build and Run!
-Awesome! It's time to fire this baby up and see it in action.
+### Фаза 4: Собираем и запускаем!
+Красотища! Теперь самое время посмотреть на эту детку в действии.
 
-#### Get a text file you can tail
-We recommend a log file like [this sample one](DoThis/sample_log_file.txt), but you can also just make a plain text file and fill it with whatever you want.
+#### Укажите файл, который вы будете обрабатывать
+Мы рекомендуем лог-файл [вроде этого](DoThis/sample_log_file.txt), но вы можете указать обычный текстовый файл, и записать туда что угодно.
 
-Open the text file up and put it on one side of your screen.
+Откройте текстовый файл и поместите окно в одну строну вашего экрана.
 
-#### Fire it up
-##### Check the starting output
-Run the application and you should see a console window open up and print out the starting contents of your log file. The starting state should look like this if you're using the sample log file we provided:
+#### Запускаем
+##### Проверьте сообщения при запуске
+Запустите приложение, и вы должны увидеть в консоли содержимое лог-файла. Примерно как на картинке:
 ![Petabridge Akka.NET Bootcamp Actor Hierarchies](Images/working_tail_1.png)
 
-**Leave both the console and the file open, and then...**
+**Оставьте консоль и файл открытыми ии....**
 
-##### Add text and see if the `tail` works!
-Add some lines of text to the text file, save it, and watch it show up in the `tail`!
+##### Добавьте текст в файл, и узрите работу `tail`!
+Добавьте несколько строчек файл, сохраните его, и убедитесь что строки появились в  `tail`!
 
-It should look something like this:
+Все будет выглядеть следующим образом:
 ![Petabridge Akka.NET Bootcamp Actor Hierarchies](Images/working_tail_2.png)
 
-Congrats! YOU HAVE JUST MADE A PORT OF `tail` IN .NET!
+Поздравляю! ВЫ ТОЛЬКО ЧТО ПОРТИРОВАЛИ `tail` НА .NET!
 
-### Once you're done
-Compare your code to the solution in the [Completed](Completed/) folder to see what the instructors included in their samples.
+### Когда все сделано
+Сравните код, который у вас вышел с примером [Completed](Completed/) , обратите внимание на комментарии в примере.
 
-## Great job! Onto Lesson 5!
-Awesome work! Well done on completing this lesson, we know it was a bear! It was a big jump forward for our system and in your understanding.
+## Отлично поработали! Переходим к уроку №5!
+Неплохо!  Поздравляем с завершение этого урока, мы знаем что это было непросто! Вы совершили действительно большой скачок в понимании акторов и их взаимодествия.
 
-Here is a high-level overview of our working system!
+Вот высокоуровневая структура нашей системы!
 
 ![Akka.NET Unit 1 Tail System Diagram](Images/system_overview.png)
 
-**Let's move onto [Lesson 5 - Looking up Actors by Address with `ActorSelection`](../lesson5).**
+**Переходим к [Урок 5: Ищем акторов по адресу при помощи `ActorSelection`](../lesson5).**
 
 ---
-## Supervision FAQ
-### How long do child actors have to wait for their supervisor?
-This is a common question we get: What if there are a bunch of messages already in the supervisor's mailbox waiting to be processed when a child reports an error? Won't the crashing child actor have to wait until those are processed until it gets a response?
+## ЧАВО по супервизорам
+### Как долго дочерние акторы должны ждать реакции супервизора?
 
-Actually, no. When an actor reports an error to its supervisor, it is sent as a special type of "system message." *System messages jump to the front of the supervisor's mailbox and are processed before the supervisor returns to its normal processing.*
-
-> *System messages jump to the front of the supervisor's mailbox and are processed before the supervisor returns to its normal processing.*
-
-Parents come with a default SupervisorStrategy object (or you can provide a custom one) that makes decisions on how to handle failures with their child actors.
-
-### But what happens to the current message when an actor fails?
-The current message being processed by an actor when it is halted (regardless of whether the failure happened to it or its parent) can be saved and re-processed after restarting. There are several ways to do this. The most common approach used is during `preRestart()`, the actor can stash the message (if it has a stash) or it can send the message to another actor that will send it back once restarted. (Note: If the actor has a stash, it will automatically unstash the message once it successfully restarts.)
+Нам часто задают вопрос - что если пачка сообщений находится в ящике у супревизора в ожидании обработки, а в этот момент дочерний актор сигнализирует об ошибке? Неужели ему придется ждать пока супервизор обработает все остальные сообщения?
 
 
-## Any questions?
-**Don't be afraid to ask questions** :).
+Вообще говоря, нет. Когда актор отправляет сообщение об ошибке своему супервизору, оно отправляется при помощи специального "системного сообщения".  *Системые сообщения обрабатываются супревизором в первую очередь, в обход остальных сообщений во входящем ящике.*
 
-Come ask any questions you have, big or small, [in this ongoing Bootcamp chat with the Petabridge & Akka.NET teams](https://gitter.im/petabridge/akka-bootcamp).
+> * Системные сообщения обрабатываются в первую очередь, и супервизор не будет обрабатывать обычные сообщения, пока не разберется со всеми системными.*
 
-### Problems with the code?
-If there is a problem with the code running, or something else that needs to be fixed in this lesson, please [create an issue](https://github.com/petabridge/akka-bootcamp/issues) and we'll get right on it. This will benefit everyone going through Bootcamp.
+У всех супервизоров указана стратегия (SupervisorStrategy) по умолчанию (вы можете написать свою) при помощи которой принимаются решения о том, как обрабатывать ошибки в наследниках.
+
+### Но что случится с текущим сообщением, которое обрабатывает актор, если он остановит работу?
+Сообщение, которое обрабатывается в момент остановки актора( вне зависимости от того, произошла ошибка в самом акторе или в его родителе) может быть сохранено и повторно обработано после перезапуска. Этого можно добиться несколькими способами. Наиболее популярный вариант  - воспользовавшись `preRestart()`, актор может сохранить сообщение в стек сообщений(stash),если он у него есть. Еще можно отправить сообщение другому актору который пришлет его обратно после перезапуска. Примечание: если у актора есть стек сообщений, он автоматически вытянет сообщение из стека после перезапуска.
+
+## Есть вопросы?
+**Не стесняйтесь задавать вопроосы** :).
+
+Можете задавать любые вопросы, большие и маленькие, [в этом чате команд Petabridge и Akka.NET (английский)](https://gitter.im/petabridge/akka-bootcamp).
+
+### Проблемы с кодом?
+Если у вас возникил проблемы с запуском кода или чем-то другим, что необходимо починить в уроке, пожалуйста, [создайте issue](https://github.com/petabridge/akka-bootcamp/issues) и мы это пофиксим. Таким образом вы поможете всем кто будет проходить эту обучалку.
