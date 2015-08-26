@@ -728,22 +728,23 @@ protected override SupervisorStrategy SupervisorStrategy()
 
 ![Akka.NET Unit 1 Tail System Diagram](Images/system_overview.png)
 
-**Переходим к [Lesson 5 - Looking up Actors by Address with `ActorSelection`](../lesson5).**
+**Переходим к [Урок 5: Ищем акторов по адресу при помощи `ActorSelection`](../lesson5).**
 
 ---
-## Supervision FAQ
-### How long do child actors have to wait for their supervisor?
-This is a common question we get: What if there are a bunch of messages already in the supervisor's mailbox waiting to be processed when a child reports an error? Won't the crashing child actor have to wait until those are processed until it gets a response?
+## ЧАВО по супервизорам
+### Как долго дочерние акторы должны ждать реакции супервизора?
 
-Actually, no. When an actor reports an error to its supervisor, it is sent as a special type of "system message." *System messages jump to the front of the supervisor's mailbox and are processed before the supervisor returns to its normal processing.*
+Нам часто задают вопрос - что если пачка сообщений находится в ящике у супревизора в ожидании обработки, а в этот момент дочерний актор сигнализирует об ошибке? Неужели ему придется ждать пока супервизор обработает все остальные сообщения?
 
-> *System messages jump to the front of the supervisor's mailbox and are processed before the supervisor returns to its normal processing.*
 
-Parents come with a default SupervisorStrategy object (or you can provide a custom one) that makes decisions on how to handle failures with their child actors.
+Вообще говоря, нет. Когда актор отправляет сообщение об ошибке своему супервизору, оно отправляется при помощи специального "системного сообщения".  *Системые сообщения обрабатываются супревизором в первую очередь, в обход остальных сообщений во входящем ящике.*
 
-### But what happens to the current message when an actor fails?
-The current message being processed by an actor when it is halted (regardless of whether the failure happened to it or its parent) can be saved and re-processed after restarting. There are several ways to do this. The most common approach used is during `preRestart()`, the actor can stash the message (if it has a stash) or it can send the message to another actor that will send it back once restarted. (Note: If the actor has a stash, it will automatically unstash the message once it successfully restarts.)
+> * Системные сообщения обрабатываются в первую очередь, и супервизор не будет обрабатывать обычные сообщения, пока не разберется со всеми системными.*
 
+У всех супервизоров указана стратегия (SupervisorStrategy) по умолчанию (вы можете написать свою) при помощи которой принимаются решения о том, как обрабатывать ошибки в наследниках.
+
+### Но что случится с текущим сообщением, которое обрабатывает актор, если он остановит работу?
+Сообщение, которое обрабатывается в момент остановки актора( вне зависимости от того, произошла ошибка в самом акторе или в его родителе) может быть сохранено и повторно обработано после перезапуска. Этого можно добиться несколькими способами. Наиболее популярный вариант  - воспользовавшись `preRestart()`, актор может сохранить сообщение в стек сообщений(stash),если он у него есть. Еще можно отправить сообщение другому актору который пришлет его обратно после перезапуска. Примечание: если у актора есть стек сообщений, он автоматически вытянет сообщение из стека после перезапуска.
 
 ## Есть вопросы?
 **Не стесняйтесь задавать вопроосы** :).
