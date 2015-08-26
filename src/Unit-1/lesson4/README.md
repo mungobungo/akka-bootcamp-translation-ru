@@ -326,30 +326,30 @@ namespace WinTail
 }
 ```
 
-You'll also want to make sure to update the `Props` instance in `Main` that references the class:
+Также убедимся, что мы обновлии `Props` в `Main`, который ссылается на наш класс:
 
 ```csharp
 // Program.cs
 Props validationActorProps = Props.Create(() => new FileValidatorActor(consoleWriterActor));
 ```
 
-#### Update `DoPrintInstructions`
-Just making a slight tweak to our instructions here, since we'll be using a text file on disk going forward instead of prompting the user for input.
+#### Обновим `DoPrintInstructions`
+Немного обновим наши инструкции, поскольку теперь вместо пользовательсого ввода будет использоваться файл.
 
-Update `DoPrintInstructions()` to this:
+Исправьте `DoPrintInstructions()` следующим образом:
 
 ```csharp
 // ConsoleReaderActor.cs
 private void DoPrintInstructions()
 {
-    Console.WriteLine("Please provide the URI of a log file on disk.\n");
+    Console.WriteLine("пожалуйста укажите URI лог-файла на диске.\n");
 }
 ```
 
-#### Add `FileObserver`
-This is a utility class that we're providing for you to use. It does the low-level work of actually watching a file for changes.
+#### Добавляем `FileObserver`
+Этот класс мы будем использовать для отслеживания изменений в файле.
 
-Create a new class called `FileObserver` and type in the code for [FileObserver.cs](Completed/FileObserver.cs). If you're running this on Mono, note the extra environment variable that has to be uncommented in the `Start()` method:
+Создайте класс `FileObserver` и продублируйте код из [FileObserver.cs](Completed/FileObserver.cs). Если вы запускаете проект под Mono, раскомментируйте определение переменной окружения в методе `Start()`:
 
 ```csharp
 // FileObserver.cs
@@ -439,15 +439,15 @@ namespace WinTail
 }
 ```
 
-### Phase 2: Make your first parent/child actors!
-Great! Now we're ready to create our actor classes that will form a parent/child relationship.
+### Фаза 2: Создадим родственные связи между акторами!
+Супер! Теперь мы готовы создать акторов со связями..
 
-Recall that in the hierarchy we're going for, there is a `TailCoordinatorActor` that coordinates child actors to actually monitor and tail files. For now it will only supervise one child, `TailActor`, but in the future it can easily expand to have many children, each observing/tailing a different file.
+В иерархии, которую мы собираемся построить, `TailCoordinatorActor` координирует работу акторов которые отслеживают изменения и читают данны из файлов. Пока этот актор будет контролироть только `TailActor`, но в будущем можно добавить поддержки большего количества дочерних акторов, каждый из которых может следить/читать свой личный файл.
 
-#### Add `TailCoordinatorActor`
-Create a new class called `TailCoordinatorActor` in a file of the same name.
+#### Добавляем `TailCoordinatorActor`
+Создайте класс `TailCoordinatorActor` в файле с соответствующим именем.
 
-Add the following code, which defines our coordinator actor (which will soon be our first parent actor).
+Добавьте код, который описывает актора-координатора( и который скоро станет нашим первым родительским актором).
 
 ```csharp
 // TailCoordinatorActor.cs
@@ -506,24 +506,24 @@ namespace WinTail
 
 ```
 
-#### Create `IActorRef` for `TailCoordinatorActor`
-In `Main()`, create a new `IActorRef` for `TailCoordinatorActor` and then pass it into `fileValidatorActorProps`, like so:
+#### Добавляем `IActorRef` на `TailCoordinatorActor`
+В `Main()`, создадим `IActorRef`, который ссылается на `TailCoordinatorActor` и передадим эту ссылку в `fileValidatorActorProps`. Как-то так:
 
 ```csharp
 // Program.Main
-// make tailCoordinatorActor
+// создаем tailCoordinatorActor
 Props tailCoordinatorProps = Props.Create(() => new TailCoordinatorActor());
 IActorRef tailCoordinatorActor = MyActorSystem.ActorOf(tailCoordinatorProps, "tailCoordinatorActor");
 
-// pass tailCoordinatorActor to fileValidatorActorProps (just adding one extra arg)
+// передаем tailCoordinatorActor в fileValidatorActorProps (просто добавляем еще один аргумент)
 Props fileValidatorActorProps = Props.Create(() => new FileValidatorActor(consoleWriterActor, tailCoordinatorActor));
 IActorRef validationActor = MyActorSystem.ActorOf(fileValidatorActorProps, "validationActor");
 ```
 
-#### Add `TailActor`
-Now, add a class called `TailActor` in its own file. This actor is the actor that is actually responsible for tailing a given file. `TailActor` will be created and supervised by `TailCoordinatorActor` in a moment.
+#### Добавляем `TailActor`
+Теперь создадим `TailActor`. Он будет отвечать за чтение последних изменений в файле. `TailActor` будет создан, и будет контролироваться `TailCoordinatorActor` одним движением руки.
 
-For now, add the following code in `TailActor.cs`:
+Добавьте следующий код в  `TailActor.cs`:
 
 ```csharp
 // TailActor.cs
@@ -640,12 +640,12 @@ namespace WinTail
 }
 ```
 
-#### Add `TailActor` as a child of `TailCoordinatorActor`
-Quick review: `TailActor` is to be a child of `TailCoordinatorActor` and will therefore be supervised by `TailCoordinatorActor`.
+#### Указываем, что `TailActor` является дочерним для `TailCoordinatorActor`
+Напоминалка: `TailActor` является наследником `TailCoordinatorActor`, и следовательно, `TailCoordinatorActor` будет супервизором, который контролирует `TailActor`.
 
-This also means that `TailActor` must be created in the context of `TailCoordinatorActor`.
+Это также означает, что `TailActor` должен быть создан в контексте `TailCoordinatorActor`.
 
-Go to `TailCoordinatorActor.cs` and replace `OnReceive()` with the following code to create your first child actor!
+Перейдите к `TailCoordinatorActor.cs` и замените `OnReceive()` кодом, которые создаст вашего первого дочернего актора!
 
 ```csharp
 // TailCoordinatorActor.OnReceive
@@ -654,24 +654,24 @@ protected override void OnReceive(object message)
     if (message is StartTail)
     {
         var msg = message as StartTail;
-		// here we are creating our first parent/child relationship!
-		// the TailActor instance created here is a child
-		// of this instance of TailCoordinatorActor
+		// Тут мы создаем пурвую связь родитель/наследник!
+		// экземпляр TailActor создан как потомок экземпляра TailCoordinatorActor
         Context.ActorOf(Props.Create(() => new TailActor(msg.ReporterActor, msg.FilePath)));
     }
 
 }
 ```
 
-### ***BAM!***
-You have just established your first parent/child actor relationship!
+### ***БУММММ!***
+Вы только что установили связь между родителем и дочерним актором!
 
-### Phase 3: Implement a `SupervisorStrategy`
-Now it's time to add a supervision strategy to your new parent, `TailCoordinatorActor`.
+### Фаза 3: Укажем `SupervisorStrategy`
 
-The default `SupervisorStrategy` is a One-For-One strategy ([docs](http://getakka.net/docs/Supervision#one-for-one-strategy-vs-all-for-one-strategy)) w/ a Restart directive ([docs](http://getakka.net/docs/Supervision#what-restarting-means)).
+Теперь самое время добавить стратегию супервизора `TailCoordinatorActor`-у.
 
-Add this code to the bottom of `TailCoordinatorActor`:
+По умолчанию `SupervisorStrategy` будет One-For-One (Каждый-сам-за-себя) ([docs](http://getakka.net/docs/Supervision#one-for-one-strategy-vs-all-for-one-strategy)) с директивой Restart ([docs](http://getakka.net/docs/Supervision#what-restarting-means)).
+
+Добавьте в конец `TailCoordinatorActor`:
 
 ```csharp
 // TailCoordinatorActor.cs
@@ -695,16 +695,16 @@ protected override SupervisorStrategy SupervisorStrategy()
 }
 ```
 
-### Phase 4: Build and Run!
-Awesome! It's time to fire this baby up and see it in action.
+### Фаза 4: Собираем и запускаем!
+Красотища! Теперь самое время посмотреть на эту детку в действии.
 
-#### Get a text file you can tail
-We recommend a log file like [this sample one](DoThis/sample_log_file.txt), but you can also just make a plain text file and fill it with whatever you want.
+#### Укажите файл, который вы будете обрабатывать
+Мы рекомендуем лог-файл [вроде этого](DoThis/sample_log_file.txt), но вы можете указать обычный текстовый файл, и записать туда что угодно.
 
-Open the text file up and put it on one side of your screen.
+Откройте текстовый файл и поместите окно в одну строну вашего экрана.
 
-#### Fire it up
-##### Check the starting output
+#### Запускаем
+##### Проверьте сообщения при запуске
 Run the application and you should see a console window open up and print out the starting contents of your log file. The starting state should look like this if you're using the sample log file we provided:
 ![Petabridge Akka.NET Bootcamp Actor Hierarchies](Images/working_tail_1.png)
 
@@ -745,10 +745,10 @@ Parents come with a default SupervisorStrategy object (or you can provide a cust
 The current message being processed by an actor when it is halted (regardless of whether the failure happened to it or its parent) can be saved and re-processed after restarting. There are several ways to do this. The most common approach used is during `preRestart()`, the actor can stash the message (if it has a stash) or it can send the message to another actor that will send it back once restarted. (Note: If the actor has a stash, it will automatically unstash the message once it successfully restarts.)
 
 
-## Any questions?
-**Don't be afraid to ask questions** :).
+## Есть вопросы?
+**Не стесняйтесь задавать вопроосы** :).
 
-Come ask any questions you have, big or small, [in this ongoing Bootcamp chat with the Petabridge & Akka.NET teams](https://gitter.im/petabridge/akka-bootcamp).
+Можете задавать любые вопросы, большие и маленькие, [в этом чате команд Petabridge и Akka.NET (английский)](https://gitter.im/petabridge/akka-bootcamp).
 
-### Problems with the code?
-If there is a problem with the code running, or something else that needs to be fixed in this lesson, please [create an issue](https://github.com/petabridge/akka-bootcamp/issues) and we'll get right on it. This will benefit everyone going through Bootcamp.
+### Проблемы с кодом?
+Если у вас возникил проблемы с запуском кода или чем-то другим, что необходимо починить в уроке, пожалуйста, [создайте issue](https://github.com/petabridge/akka-bootcamp/issues) и мы это пофиксим. Таким образом вы поможете всем кто будет проходить эту обучалку.
