@@ -58,82 +58,85 @@
 ![Petabridge Akka.NET Bootcamp Lesson 1.3 Actor Hierarchies](Images/hierarchy_overview.png)
 
 
-### What are the levels of the hierarchy?
-#### The base of it all: The "Guardians"
-The "guardians" are the root actors of the entire system.
+### Как разобраться в этой иерархии?
+#### Основа всего -  "Guardians" они же Хранитель
+ "хранители" это самые главные акторы во всей системе.
 
-I'm referring to these three actors at the very top of the hierarchy:
+Я имею ввиду этих троих на вершине пищевой цепочки:
 ![Petabridge Akka.NET Bootcamp Lesson 1.3 Actor Hierarchies](Images/guardians.png)
 
-##### The `/` actor
+##### Актор `/` 
 
-The `/` actor is the base actor of the entire actor system, and may also be referred to as "The Root Guardian." This actor supervises the `/system` and `/user` actors (the other "Guardians").
+Актор по имине `/` - основной актор всей системы акторов. Его можно назвать "Главным хранителем." Он  контролирует акторов `/system` и `/user`  (других "хранителей").
 
-All actors require another actor as their parent, except this one. This actor is also sometimes called the "bubble-walker" since it is "out of the bubble" of the normal actor system. For now, don't worry about this actor.
+Всем акторам кроме этого нужны родители. Он находится вне рамок системы координат обычных акторов. Но подробно обсуждать его мы не будем.
 
-##### The `/system` actor
+##### Актор `/system`
 
-The `/system` actor may also be referred to as "The System Guardian". The main job of this actor is to ensure that the system shuts down in an orderly manner, and to maintain/supervise other system actors which implement framework level features and utilities (logging, etc). We'll discuss the system guardian and the system actor hierarchy in a future post.
+Актор `/system` - это "Хранитель Системы". Основаная его забота - обеспечить безопасное выключение системы. Также он контролирует акторов, которые обеспечивают дополнительные возможности системы (логирование и т.п.). 
 
-##### The `/user` actor
+##### Актор `/user` 
 
-This is where the party starts! And this is where you'll be spending all your time as a developer.
+Вот где начинается реальная движуха! И основное время разработки  вы проведете именно здесь .
 
-The `/user` actor may also be referred to as "The Guardian Actor". But from a user perspective, `/user` is the root of your actor system and is usually just called the "root actor."
+Актора `/user` можно назвать "Хранитель Акторов". С этой точки зрения, `/user` является корневым элеметом вашей системы акторов, и обычно его называеют "корневым актором."
 
-> Generally, "root actor" refers to the `/user` actor.
+> Обычно выражение "корневой актор" относится к `/user`.
 
-As a user, you don't really need to worry too much about the Guardians. We just have to make sure that we use supervision properly under `/user` so that no exception can bubble up to the Guardians and crash the whole system.
+Как пользователю, вам не часть придется иметь дело с Хранителями. Наша основная задача - обеспечить корректную работу супервизоров ниже `/user`,  так чтобы исключения не могли добраться до Хранителей и обрушить систему.
 
-
-#### The `/user` actor hierarchy
-This is the meat and potatoes of the actor hierarchy: all of the actors you define in your applications.
+#### Иерархия под началом `/user`
+Вот альфа и омега всей иерархии акторов. Все ваши акторы так или иначе подчинаются `/user`.
 ![Akka: User actor hierarchy](Images/user_actors.png)
 
-> The direct children of the `/user` actor are called "top level actors."
+> Прямые наследники `/user` называются "верхнеуровневыми акторами."
 
-Actors are always created as a child of some other actor.
+Акторы всегда создаются как наследники другого актора.
 
-Whenever you make an actor directly from the context of the actor system itself, that new actor is a top level actor, like so:
+Когда вы создаете актора в контексте самой системы акторов, этот актор становится верхнеуровневым актором:
 
 ```csharp
-// create the top level actors from above diagram
+// создаем акторов вверху диаграммы
 IActorRef a1 = MyActorSystem.ActorOf(Props.Create<BasicActor>(), "a1");
 IActorRef a2 = MyActorSystem.ActorOf(Props.Create<BasicActor>(), "a2");
 ```
 
-Now, let's make child actors for `a2` by creating them inside the context of `a2`, our parent-to-be:
+Теперь добавим наследников `a2`,  создавая их в контексте нашего будущего родителя:
 
 ```csharp
-// create the children of actor a2
-// this is inside actor a2
+// создаем наследников a2
+// этот код находится внутри a2
 IActorRef b1 = Context.ActorOf(Props.Create<BasicActor>(), "b1");
 IActorRef b2 = Context.ActorOf(Props.Create<BasicActor>(), "b2");
 ```
 
-#### Actor path == actor position in hierarchy
-Every actor has an address. To send a message from one actor to another, you just have to know it's address (AKA its "ActorPath"). This is what a full actor address looks like:
+#### Адрес актора == позиция актора в иерархии
+У каждого актора есть свой адрес. Чтобы послать сообщение от одного актора к другому, вам необходимо знать этот адрес ("ActorPath"). Вот как выглядит полный адрес актора:
 
 ![Akka.NET actor address and path](Images/actor_path.png)
 
-> *The "Path" portion of an actor address is just a description of where that actor is in your actor hierarchy. Each level of the hierarchy is separated by a single slash ('/').*
+> * "Путь" - это часть адреса актора, которая описыает его местоположение в иерархии. Каждый уровень иерархии разделяется слешом ('/').*
 
-For example, if we were running on `localhost`, the full address of actor `b2` would be `akka.tcp://MyActorSystem@localhost:9001/user/a2/b2`.
+Например, если мы запустили приложение на `localhost`, полным адресом актора `b2` будет `akka.tcp://MyActorSystem@localhost:9001/user/a2/b2`.
 
-One question that comes up a lot is, "Do my actor classes have to live at a certain point in the hierarchy?" For example, if I have an actor class, `FooActor`—can I only deploy that actor as a child of `BarActor` on the hierarchy? Or can I deploy it anywhere?
+Вопрос который вертится на языке - "Должен ли актор обязательно находиться в определенной точке иерархии"?
+Например у меня есть `FooActor`, должен ли он обязательно быть наследником  `BarActor`, или его можно запихнуть куда угодно?
 
-The answer is **any actor may be placed anywhere in your actor hierarchy**.
+Ответ - **Любой актор может занять любое место в иерархии**.
 
-> *Any actor may be placed anywhere in your actor hierarchy.*
+> *Любой актор может занять любое место в иерархии.*
 
-Okay, now that we've got this hierarchy business down, let's do something interesting with it. Like supervising!
 
-### How supervision works in the actor hierarchy
-Now that you know how actors are organized, know this: actors supervise their children. *But, they only supervise the level that is immediately below them in the hierarchy (actors do not supervise their grandchildren, great-grandchildren, etc).*
+Хорошо, теперь когда мы разобрались с иерархией, давайте сделаем что-то полезное. Например супервизоров!
 
-> Actors only supervise their children, the level immediately below them in the hierarchy.
+### Как супервизоры работают в иерархии акторов?
 
-#### When does supervision come into play? Errors!
+Теперь когда вы в курсе огранизации акторов, вы знаете что акторы контролируют(являются супервизорами) своих потомков. *Но они являются супервизорами акторов ровно на один уровень ниже. они не контролируют своих внуков, правнуков и т.п.)*
+
+
+> Акторы контролируют только своих детей, ровно на один уровень вниз по иерархии.
+
+#### А когда супервизоры вступают в игру? В случае ошибок!
 When things go wrong, that's when! Whenever a child actor has an unhandled exception and is crashing, it reaches out to its parent for help and to tell it what to do.
 
 Specifically, the child will send its parent a message that is of the `Failure` class. Then it's up to the parent to decide what to do.
