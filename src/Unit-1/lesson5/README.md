@@ -1,46 +1,47 @@
 # Урок 1.5: Урок 5: Ищем акторов по адресу при помощи `ActorSelection`
-Welcome to lesson 5! Wow, we've come a long way together. First, just **take a quick moment to appreciate that, and give yourself credit for investing your time and energy into your craft**.
+Добро пожаловать на пятый урок! Хочу заметить что мы прошли немалый путь вместе. Потратьте **несолько секунд чтобы получить удовольствие от этого осознания, и поблагодарите самого себя за инвестиции времени и энегрии в учебу**.
 
-Mmm, that was nice.
+Мммм... это было здорово!
 
-Okay, let's get on with it!
+Продолжим же движение к светлому будущему!
 
-In this lesson, we're going to learn how to decouple our actors from each other a bit and a new way of communicating between actors: [`ActorSelection`](http://api.getakka.net/docs/stable/html/CC0731A6.htm "Akka.NET Stable API Docs - ActorSelection class"). This lesson is shorter than the previous ones, now that we've laid down a solid conceptual foundation.
+В этом уроке мы изучим как уменьшить связность между акторами, в также новый способ коммуникации между акторами: [`ActorSelection`](http://api.getakka.net/docs/stable/html/CC0731A6.htm "Akka.NET Stable API Docs - ActorSelection class"). Этот урок будет немного короче чем предыдущий, потому мы уже заложили основательный фундамент для дальнейшего развития.
 
-## Key concepts / background
-`ActorSelection` is a natural extension of actor hierarchies, which we covered in the last lesson. Now that we understand that actors live in hierarchies, it begs the question: now that actors aren't all on the same level, does this change the way they communicate?
+## Ключевые концепии / общая информация
+`ActorSelection` это естественное развитие иерархии акторов, с которой мы познакомились на прошлом уроке. Поскольку мы знаем, что акторы живут в иерархиях, возникает вопрос - как могут общаться акторы, которые НЕ находятся на одном и том же уровне?
 
-We know that we need a handle to an actor in order to send it a message and get it to do work. But now we have actors all over the place in this hierarchy, and don't always have a direct link (`IActorRef`) to the actor(s) we want to send messages to.
+Мы знаем, что  для того, чтобы послать сообщение актору, нам понадобится ссылка на него. Но теперь у нас акторы разбросаны по всей иерархии, и у нас не всегда есть возможность получить прямую ссылку (`IActorRef`) на актора, которому мы собираемся послать сообщение.  
 
-*So how do we send a message to an actor somewhere else in the hierarchy, that we don't have a stored `IActorRef` for? What then?*
+*Как же мы можем послать сообщение актору в другой части иерархии, если у нас нет его `IActorRef`? Что же делать?*
 
-Enter `ActorSelection`.
+Воспользоваться `ActorSelection`.
 
-### What is `ActorSelection`?
-`ActorSelection` is nothing more than using an `ActorPath` to get a handle to an actor or actors so you can send them a message, without having to store their actual `IActorRef`s.
+### Что такое `ActorSelection`?
+`ActorSelection` дает возможность использовать адрес актора (`ActorPath`), чтобы получить ссылку на него. При этом вам не надо иметь прямую ссылку (`IActorRef`) на него.
 
-Instead of getting a handle to an actor by creating or passing around its `IActorRef`, you're "looking up" a handle to the actor by its `ActorPath` (recall that the `ActorPath` is the address for an actor's position in the system hierarchy). It's kind of like looking someone up on Skype by their email when you don't already have their username.
+Вместо того, чтобы получать ссылку в конструкторе или передавать ее как параметр, вы "находите" актора при помощи его `ActorPath` (напиминаем, что `ActorPath` это месторасположение актора в иерархии). Это чем-то похоже на поиск людей в Skype. Если вы не знаете его имени, вы можете искать по e-mail.
 
-However, be aware that while `ActorSelection` is how you look up an `IActorRef`, it's not inherently a 1-1 lookup to a single actor.
+Будьте однако осторожны, потому что `ActorSelection` не всегда даст вам одну и только одну ссылку(`IActorRef`) на актора.
 
-Technically, the `ActorSelection` object you get when you do a lookup does not point to a specific `IActorRef`. It's actually a handle that internally points to every `IActorRef` that matches the expression you looked up. Wildcards are supported in this expression, so it's an expression that selects 0+ actors. (More on this later.)
 
-An `ActorSelection` will also match two different `IActorRef`s with the same name if the first one dies and is replaced by another (not restarted, in which case it would be the same `IActorRef`).
+Технически, `ActorSelection` не обязательно указывает на конкретного актора и его `IActorRef`. На самом деле это структура, которая содержит ссылки на всех акторов, которые подходят под ваш запрос. Для этого можно использовать звездочки, так что выражение может выбрать от 0 до бесконечности акторов. (Об этом чуть позже).
 
-#### Is it an object? A process? Both?
-We think of `ActorSelection` as both a process and an object: the process of looking actor(s) up by `ActorPath`, and the object returned from that lookup, which allows us to send messages to the actor(s) matched by the expression we looked up.
+`ActorSelection` также может получить две различные ссылки (`IActorRef`) с тем же самым именем актора, если первый из них умер, и был заменен другим ( не перезапущен, поскольку при перезапуске `IActorRef` сохраняется).
 
-### Why should I care about `ActorSelection`?
-Always a great question, glad you asked! There are a number of benefits that `ActorSelection` gives you.
+#### Так это объект? Или процесс? Или и то и другое?
+Мы предпочитаем думать о  `ActorSelection` как о процессе И об объекте: процесс ищет актора(-ов) при помощи `ActorPath`, и возвращает объект, который позволяет нам отправлять сообщения всем акторам, которые попали в выборку..
 
-#### Location transparency
-What [location transparency](http://getakka.net/docs/concepts/location-transparency) actually means is that whenever you send a message to an actor, you don't need to know where they are within an actor system, which might span hundreds of computers. You don't care if your actors are all in one process or spread across 100 machines around the world. You just have to know that actors' address (its `ActorPath`).
+### Почему меня должен волновать `ActorSelection`?
+Спасибо, очень хороший вопрос!  `ActorSelection` дает вам несколько приятных возможностей.
 
-Think of it like calling someone's cell phone number - you don't need to know that your friend Bob is in Seattle, Washington, USA in order to place a call to them. You just need to dial Bob's cell phone number and your cellular network provider will take care of the rest.
+#### Независимость от месторасположения (Location transparency)
+ [Независимость от месторасположения](http://getakka.net/docs/concepts/location-transparency) означате, что для того, чтобы послать сообщение актору, вам не надо знать его точное расположение в системе акторов. Потому что эта самая система может состоять из сотен машин. Вас не волнует, находятся акторы на одной физической машине или раскиданы по сотне машин на нескольких континентах. Все, что вам надо знать, это адрес актора (его `ActorPath`).
+
+Можете провести аналогию с мобильным телефоном - вам не надо знать что ваш друг Вася сейчас селе Бродилово, Красносельского уезда, Полифонической губернии. Если вы знаете номер его телефона, вы можете ему дозвониться. Об всех сложностях маршрутизации позаботится мобильный оператор.
 
 The location transparency (enabled by `ActorSelection`) is essential for creating scalable systems that can handle high-availability requirements. We'll go into this more in Units 2 & 3.
 
-#### Loose coupling
+#### Слабая связность
 Since you don't have to constantly be holding on to `IActorRef`s to store and pass around, your actors don't get tightly coupled to each other. Just like in object-oriented programming, this is a Very Good Thing. It means the components of your system stay loose and easily adaptable / reusable. It lowers the cost of maintaining your codebase.
 
 #### Dynamic behavior
