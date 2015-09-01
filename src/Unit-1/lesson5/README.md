@@ -131,13 +131,14 @@ selection.Tell(message);
 
 НО представьте, что `ConsoleReaderActor` находится далеко от `FileValidatorActor` в рамках иерархии. В этом случае передать ссылку  без использования всех промежуточных звеньев будет довольно непросто. 
 
-Без  `ActorSelection`,  вам бы пришлось передавать `IActorRef` через каждый объект, который находится по пути. Это бы превратило бы ваш код в огромную тарелку сильносвязанных спагетти. --**фи**!
+Без  `ActorSelection`,  вам бы пришлось передавать `IActorRef` через каждый объект, который находится по пути. Это бы превратило бы ваш код в огромную тарелку сильносвязанных спагетти. --**фууууу**!
 
-Let's fix that by **removing the `validationActor` `IActorRef` that we're passing in**. The top of `ConsoleReaderActor` should now look like this:
+Исправим это досадное неразумение, **удалив ссылку на `validationActor` **
+Теперь `ConsoleReaderActor` должен выглядеть так:
 
 ```csharp
 // ConsoleReaderActor.cs
-// note: we don't even need our own constructor anymore!
+// Обратите внимание, нам теперь даже не нужен собственный конструктор
 public const string StartCommand = "start";
 public const string ExitCommand = "exit";
 
@@ -152,29 +153,31 @@ protected override void OnReceive(object message)
 }
 ```
 
-Then, let's update the call for message validation inside `ConsoleReaderActor` so that the actor doesn't have to hold onto a specific `IActorRef` and can just forward the message read from the console onto an `ActorPath` where it knows validation occurs.
+После этого обновим вызов метода валидации внутри `ConsoleReaderActor`. Актору теперь не надо хранить ссылку, он может отправить сообщение по `ActorPath`-у валидации.
+
 
 ```csharp
 // ConsoleReaderActor.GetAndValidateInput
 
-// otherwise, just send the message off for validation
+// просто пошлем сообщение о валидации
 Context.ActorSelection("akka://MyActorSystem/user/validationActor").Tell(message);
 ```
 
-Finally, let's update `consoleReaderProps` accordingly in `Program.cs` since its constructor no longer takes any arguments:
+И в конце концов обновим создание `consoleReaderProps` в `Program.cs`, посольку мы уже не передаем параметров в конструктор:
 ```csharp
 // Program.Main
 Props consoleReaderProps = Props.Create<ConsoleReaderActor>();
 ```
 
-### Phase 2: Decouple `FileValidatorActor` and `TailCoordinatorActor`
-Just as with `ConsoleReaderActor` and `FileValidatorActor`, the `FileValidatorActor` currently requires an `IActorRef` for the `TailCoordinatorActor` which it does not need. Let's fix that.
+### Фаза 2: Развяжем `FileValidatorActor` и `TailCoordinatorActor`
+Как и в предыдущей фазе,  `FileValidatorActor`-у нужна ссылка`IActorRef` на `TailCoordinatorActor`. Но можно обойтись и без нее
 
-First, **remove the `tailCoordinatorActor` argument to the constructor of `FileValidatorActor` and remove the accompanying field on the class**. The top of `FileValidatorActor.cs` should now look like this:
+Перво наперво, **уберем аргумент `tailCoordinatorActor` из конструктора `FileValidatorActor`, вместе с полем для хранения этой ссылки**. 
+Класс `FileValidatorActor.cs` должен выглядеть приблизительно так:
 
 ```csharp
 // FileValidatorActor.cs
-// note that we're no longer storing _tailCoordinatorActor field
+// обратите внимание, что нам больше не надо хранить поле _tailCoordinatorActor
 private readonly IActorRef _consoleWriterActor;
 
 public FileValidatorActor(IActorRef consoleWriterActor)
@@ -183,31 +186,31 @@ public FileValidatorActor(IActorRef consoleWriterActor)
 }
 ```
 
-Then, let's use `ActorSelection` to communicate between `FileValidatorActor` and `TailCoordinatorActor`! Update `FileValidatorActor` like this:
+Теперь воспользуемся `ActorSelection` для общения между `FileValidatorActor` и `TailCoordinatorActor`! Обновите `FileValidatorActor`:
 ```csharp
 // FileValidatorActor.cs
 // start coordinator
 Context.ActorSelection("akka://MyActorSystem/user/tailCoordinatorActor").Tell(new TailCoordinatorActor.StartTail(msg, _consoleWriterActor));
 ```
 
-And finally, let's update `fileValidatorProps` in `Program.cs` to reflect the different constructor arguments:
+И не забудьте обновить `fileValidatorProps` в `Program.cs`:
 
 ```csharp
 // Program.Main
 Props fileValidatorActorProps = Props.Create(() => new FileValidatorActor(consoleWriterActor));
 ```
 
-### Phase 3: Build and Run!
-Awesome! It's time to fire this baby up and see it in action.
+### Фаза 3: Собираем и запускаем!
+Лепота! Попробуем поглядеть на наше решение в работе.
 
-Just as with the last lesson, you should be able to hit `F5` and run your log/text file and see additions to it appear in your console.
+Как и в прошлом уроке, запустите приложение нажав `F5`, измените текстовый/лог файл, и наблюдайте за информацией в консоли.
 
 ![Petabridge Akka.NET Bootcamp Actor Selection Working](Images/selection_working.png)
 
-### Hey, wait, go back! What about that `consoleWriterActor` passed to `FileValidatorActor`? Wasn't that unnecessarily coupling actors?
-Oh. You're good, you.
+### Эй эй эй! Мииинуточку. А как насчет `consoleWriterActor`, который передается в `FileValidatorActor`? Может от этой зависимости тоже стоит избавиться?
+Ох. Да, вы правы.
 
-We assume you're talking about this `IActorRef` that is still getting passed into `FileValidatorActor`:
+Я так думаю вы сейчас имеете ввиду `IActorRef`, который передается в `FileValidatorActor`:
 
 ```csharp
 // FileValidatorActor.cs
@@ -219,32 +222,32 @@ public FileValidatorActor(IActorRef consoleWriterActor)
 }
 ```
 
-*This one is a little counter-intuitive*. Here's the deal.
+*Этот код не очень интуитивно-понятен*. Вот в чем тут дело.
 
-In this case, we aren't using the handle for `consoleWriterActor` to talk directly to it. Instead we are putting that `IActorRef` inside a message that is getting sent somewhere else in the system for processing. When that message is received, the receiving actor will know everything it needs to in order to do its job.
+В этом случае мы  не используем ссылку на`consoleWriterActor` для того, чтобы отправлять сообщения ему напрямую. Вместо этого мы сохраняем `IActorRef` внутри сообщения, которое передается в другую часть системы.  Когда сообщение доставлено, у получателя есть все данные, необходимые для выполнения работы.
 
-This is actually a good design pattern in the actor model, because it makes the message being passed entirely self-contained and keeps the system as a whole flexible, even if this one actor (`FileValidatorActor`) needs an `IActorRef` passed in and is a little coupled.
+Это одно из правил хорошего тона работы в рамках модели акторов. Сообщение содержит в себе всю необходимую информацию, и позволяет всей системе быть достаточно гибкой. Даже несмотря на то, что связность одного из акторов (`FileValidatorActor`) увеличивается.
 
-Think about what is happening in the `TailCoordinatorActor` which is receiving this message: the job of the `TailCoordinatorActor` is to manage `TailActor`s which will actually observe and report file changes to... somewhere. We get to specify that somewhere up front.
+Подумайте о `TailCoordinatorActor`, который получит это сообщение. Он контролирует работу `TailActor`-а, который в свою очередь выполняет всю работу по отслеживанию изменений и отправке нотификаций... куда-то. И это куда-то должно быть определено заранее.
 
-`TailActor` should not have the reporting output location written directly into it. The reporting output location is a task-level detail that should be encapsulated as an instruction within the incoming message. In this case, that task is our custom `StartTail` message, which indeed contains the `IActorRef` for the previously mentioned `consoleWriterActor` as the `reporterActor`.
+`TailActor` не должен хранить жестко заданное место для вывода данных. Для разных задач может понадобитсья выводить данные в разные места. Поэтому поток для вывода должен быть параметром, который мы получаем в сообщении. В нашем случае это сообщение `StartTail`, которое содержит ссылку `IActorRef` на `consoleWriterActor`-а,  который будет `reporterActor`-ом.
 
-So, a little counter-intuitively, this pattern actually promotes loose coupling. You'll see it a lot as you go through Akka.NET, especially given the widespread use of the pattern of turning events into messages.
+Вот так вот немного контринтуитивно это паттерн позволяет обеспечить слабую связность. По мере погружения в мир Akka.NET вы увидите множество подобных примеров. Особенно часто этот паттерн используется когда необходимо преобразовать события в сообщения.
 
-### Once you're done
-Compare your code to the solution in the [Completed](Completed/) folder to see what the instructors included in their samples.
+### Когда все сделано
+Сравните код, который у вас вышел с примером [Completed](Completed/) , обратите внимание на комментарии в примере.
 
-## Great job! Almost Done! Onto Lesson 6!
-Awesome work! Well done on completing this lesson! We're on the home stretch of Unit 1, and you're doing awesome.
-
-
-**Let's move onto [Lesson 6 - The Actor Lifecycle](../lesson6).**
+## Отличная работа! Осталось совсем чуть-чуть! вперед к уроку №6!
+Здорово поработали! Поздравляем с завершением данного урока! Вы очень близки к завершению блока 1, и у вас все отлично получается.
 
 
-## Any questions?
-**Don't be afraid to ask questions** :).
+**Переходим к [Уроку 6 - Жизненный цикл акторов](../lesson6).**
 
-Come ask any questions you have, big or small, [in this ongoing Bootcamp chat with the Petabridge & Akka.NET teams](https://gitter.im/petabridge/akka-bootcamp).
+## Есть вопросы?
+**Не стесняйтесь задавать вопроосы** :).
 
-### Problems with the code?
-If there is a problem with the code running, or something else that needs to be fixed in this lesson, please [create an issue](https://github.com/petabridge/akka-bootcamp/issues) and we'll get right on it. This will benefit everyone going through Bootcamp.
+Можете задавать любые вопросы, большие и маленькие, [в этом чате команд Petabridge и Akka.NET (английский)](https://gitter.im/petabridge/akka-bootcamp).
+
+### Проблемы с кодом?
+Если у вас возникил проблемы с запуском кода или чем-то другим, что необходимо починить в уроке, пожалуйста, [создайте issue](https://github.com/petabridge/akka-bootcamp/issues) и мы это пофиксим. Таким образом вы поможете всем кто будет проходить эту обучалку.
+
