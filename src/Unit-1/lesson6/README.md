@@ -1,75 +1,77 @@
-# Lesson 1.6: The Actor Lifecycle
-Wow! Look at you--made it all the way to the end of Unit 1! Congratulations. Seriously. We appreciate and commend you on your dedication to learning and growing as a developer.
+# Урок 1.6: Жизненный цикл акторов
+Вах! Вы только посмотрите на себя! Сумели добраться до конца первого блока! Поздравляем. Серьезно. Мы очень ценим и благодарим вас за вашу настойчивость в учебе.
 
-This last lesson will wrap up our "fundamentals series" on working with actors, and it ends with a critical concept: actor life cycle.
+Данный урок будет завершающим в нашей серии "основы работы с акторами". И завершим мы одной из самых важных концепций - жизненным циклом акторов.
 
-## Key concepts / background
-### What is the actor life cycle?
-Actors have a well-defined life cycle. Actors are created and started, and then they spend most of their lives receiving messages. In the event that you no longer need an actor, you can terminate or "stop" an actor.
+## Ключевые концепции / общая информация
+### Что такое жизненный цикл актора?
+У акторов есть жестко заданный жизненный цикл. Сначала актора создают, потом запускают, но основное время жизни он проводит за получением и обработкой сообщений. В случае, если актор вам больше не нужен, вы можете его остановить.
 
-### What are the stages of the actor life cycle?
-There are 5 stages of the actor life cycle in Akka.NET:
+### Из каких этапов состоит жизненный цикл актора?
+В Akka.NET существует 5 основных этапов жизненного цикла актора:
 
-1. `Starting`
-2. `Receiving`
-3. `Stopping`
-4. `Terminated`, or
-5. `Restarting`
+1. `Starting` (Актор в процессе запуска)
+2. `Receiving` (Актор обрабатывает сообщения)
+3. `Stopping` (Актор в процессе остановки)
+4. `Terminated`, (Актор остановлен)
+5. `Restarting` (Актор в процессе перезапуска)
 
-![Akka.NET actor life cycle steps with explicit methods](Images/lifecycle.png)
+![жизненный цикл актора в Akka.NET](Images/lifecycle.png)
 
-Let's take them in turn.
+Давайте разберем их по порядку.
 
-#### `Starting`
-The actor is waking up! This is the initial state of the actor, when it is being initialized by the `ActorSystem`.
+#### `Starting` (Актор в процессе запуска)
+Актор просыпается. Это первоначальное состояние актора, когда он инициализируется при помощи `ActorSystem`.
 
-#### `Receiving`
-The actor is now available to process messages. Its `Mailbox` (more on that later) will begin delivering messages into the `OnReceive` method of the actor for processing.
+#### `Receiving` (Актор получает сообщения)
+Актор готов принимать сообщения. Его почтовый ящик (`Mailbox` об этом чуть позже), начинает передавать сообщения для обработки в метод `OnReceive`.
 
-#### `Stopping`
-During this phase, the actor is cleaning up its state. What happens during this phase depends on whether the actor is being terminated, or restarted.
+#### `Stopping` (Актор в процессе остановки)
+На протяжении этойго этапа актор очищает свое состояние. Что именно происходит - зависит от того, останавливается ли актор или же просто перезапускается.
 
-If the actor is being restarted, it's common to save state or messages during this phase to be processed once the actor is back in its Receiving state after the restart.
 
-If the actor is being terminated, all the messages in its `Mailbox` will be sent to the `DeadLetters` mailbox of the `ActorSystem`. `DeadLetters` is a store of undeliverable messages, usually undeliverable because an actor is dead.
+Если актор перезапускается, он обычно сохраняет свое состояние и/или сообщения, чтобы обработать их после перезапуска.
 
-#### `Terminated`
-The actor is dead. Any messages sent to its former `IActorRef` will now go to `DeadLetters` instead. The actor cannot be restarted, but a new actor can be created at its former address (which will have a new `IActorRef` but an identical `ActorPath`).
 
-#### `Restarting`
-The actor is about to restart and go back into a `Starting` state.
+Если актор останавливается, все сообщения из его почтового ящика (`Mailbox` ) пересылаются в специальное хранилище недоставленных сообщений ( `DeadLetters`) у `ActorSystem`. В `DeadLetters` сообщения, которые невозомжно доставить, например потому что актор-получатель уже не существует.
 
-### Life cycle hook methods
-So, how can you link into the actor life cycle? Here are the 4 places you can hook in.
+#### `Terminated` (Актор остановлен)
+Актер мертв.  Любые сообщения, посылаемые его `IActorRef`, попадут в `DeadLetters`. Такого актора нельзя перезапустить. Однако можно создать нового актора с тем же адресом. У него будет другая  `IActorRef` , но тот же самый путь (`ActorPath`).
 
-#### `PreStart`
-`PreStart` logic gets run before the actor can begin receiving messages and is a good place to put initialization logic. Gets called during restarts too.
+#### `Restarting` (Актор в состоянии перезапуска)
+Актор будет перезапущен и скоро перейдет в состояние `Starting`
 
-#### `PreRestart`
-If your actor accidentally fails (i.e. throws an unhandled Exception) the actor's parent will restart the actor. `PreRestart` is where you can hook in to do cleanup before the actor restarts, or to save the current message for reprocessing later.
+### Жизенный цикл и методы обработчики
+Итак, как вы можете вклиниться в жизенный цикл аткоров ? Существует 4 места на которые вы можете подписаться.
 
-#### `PostStop`
-`PostStop` is called once the actor has stopped and is no longer receiving messages. This is a good place to include clean-up logic. PostStop also gets called during `PreRestart`, but you can override `PreRestart` and simply not call `base.PreRestart` if you want to avoid this behavior during restarts.
+#### `PreStart` (Предзапуск)
+Код в методе `PreStart`  выполняется до того, как актор начнет получать сообщения. И это неплохое место для проведения инициализации. Этот метод также вызывается при перезапуске.
 
-`DeathWatch` is also when an actor notifies any other actors that have subscribed to be alerted when it terminates. `DeathWatch` is just a pub/sub system built into framework for any actor to be alerted to the termination of any other actor.
+#### `PreRestart` (ПредПереЗапуск)
+Если ваш актор случайно упал (т.е. бросил необработанное исключение), родитель перезапустит его. Внутри `PreRestart` можно почистить ресурсы перед перезапуском или сохранить текущее сообщения для последующей обработки.
 
-#### `PostRestart`
-`PostRestart` is called during restarts after PreRestart but before PreStart. This is a good place to do any additional reporting or diagnosis on the error that caused the actor to crash, beyond what Akka.NET already does for you.
+#### `PostStop` (ПостОстановка)
+`PostStop` вызыается в момент, когда актор уже остановлен и не получает сообщений.  В этом методе можно делать очистку ресурсов.  Этот метод также вызывается во время `PreRestart`. Но вы можете переопределить  `PreRestart`, и не вызывать `base.PreRestart` , если вас не устраивает такое поведение. 
 
-Here's where the hook methods fit into the stages of the life cycle:
+`DeathWatch` также вызывается из метода `PostStop`. `DeathWatch` - система подписки, которая позволяет любому актору получить уведомление о завершении работы любого другого актора. 
 
-![Akka.NET actor life cycle steps with explicit methods](Images/lifecycle_methods.png)
+#### `PostRestart` (Пост-перезапуск)
+`PostRestart` вызывается после PreRestart, но перед PreStart. Здесь хорошо  добавлять логику и дополнительную диагностику о возможных причинах сбоя.
 
-### How do I hook into the life cycle?
-To hook in, you just override the method you want to hook into, like this:
+Вот как методы обработчики ложатся на жизненный цикл актора:
+
+![Жизенный цикл актора Akka.NET с указанием методов](Images/lifecycle_methods.png)
+
+### Как мне все-таки вклиниться в жизеннный цикл актора?
+Для этого просто перегрузите необходимый метод, например вот так:
 
 ```csharp
  /// <summary>
-/// Initialization logic for actor
+/// Инициализация аткора
 /// </summary>
 protected override void PreStart()
 {
-    // do whatever you need to here
+    // здесь можно делать что угодно
 }
 ```
 
