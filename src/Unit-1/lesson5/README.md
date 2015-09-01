@@ -1,142 +1,144 @@
-# Lesson 1.5: Looking up Actors by Address with `ActorSelection`
-Welcome to lesson 5! Wow, we've come a long way together. First, just **take a quick moment to appreciate that, and give yourself credit for investing your time and energy into your craft**.
+# Урок 1.5: Урок 5: Ищем акторов по адресу при помощи `ActorSelection`
+Добро пожаловать на пятый урок! Хочу заметить что мы прошли немалый путь вместе. Потратьте **несолько секунд чтобы получить удовольствие от этого осознания, и поблагодарите самого себя за инвестиции времени и энегрии в учебу**.
 
-Mmm, that was nice.
+Мммм... это было здорово!
 
-Okay, let's get on with it!
+Продолжим же движение к светлому будущему!
 
-In this lesson, we're going to learn how to decouple our actors from each other a bit and a new way of communicating between actors: [`ActorSelection`](http://api.getakka.net/docs/stable/html/CC0731A6.htm "Akka.NET Stable API Docs - ActorSelection class"). This lesson is shorter than the previous ones, now that we've laid down a solid conceptual foundation.
+В этом уроке мы изучим как уменьшить связность между акторами, в также новый способ коммуникации между акторами: [`ActorSelection`](http://api.getakka.net/docs/stable/html/CC0731A6.htm "Akka.NET Stable API Docs - ActorSelection class"). Этот урок будет немного короче чем предыдущий, потому мы уже заложили основательный фундамент для дальнейшего развития.
 
-## Key concepts / background
-`ActorSelection` is a natural extension of actor hierarchies, which we covered in the last lesson. Now that we understand that actors live in hierarchies, it begs the question: now that actors aren't all on the same level, does this change the way they communicate?
+## Ключевые концепии / общая информация
+`ActorSelection` это естественное развитие иерархии акторов, с которой мы познакомились на прошлом уроке. Поскольку мы знаем, что акторы живут в иерархиях, возникает вопрос - как могут общаться акторы, которые НЕ находятся на одном и том же уровне?
 
-We know that we need a handle to an actor in order to send it a message and get it to do work. But now we have actors all over the place in this hierarchy, and don't always have a direct link (`IActorRef`) to the actor(s) we want to send messages to.
+Мы знаем, что  для того, чтобы послать сообщение актору, нам понадобится ссылка на него. Но теперь у нас акторы разбросаны по всей иерархии, и у нас не всегда есть возможность получить прямую ссылку (`IActorRef`) на актора, которому мы собираемся послать сообщение.  
 
-*So how do we send a message to an actor somewhere else in the hierarchy, that we don't have a stored `IActorRef` for? What then?*
+*Как же мы можем послать сообщение актору в другой части иерархии, если у нас нет его `IActorRef`? Что же делать?*
 
-Enter `ActorSelection`.
+Воспользоваться `ActorSelection`.
 
-### What is `ActorSelection`?
-`ActorSelection` is nothing more than using an `ActorPath` to get a handle to an actor or actors so you can send them a message, without having to store their actual `IActorRef`s.
+### Что такое `ActorSelection`?
+`ActorSelection` дает возможность использовать адрес актора (`ActorPath`), чтобы получить ссылку на него. При этом вам не надо иметь прямую ссылку (`IActorRef`) на него.
 
-Instead of getting a handle to an actor by creating or passing around its `IActorRef`, you're "looking up" a handle to the actor by its `ActorPath` (recall that the `ActorPath` is the address for an actor's position in the system hierarchy). It's kind of like looking someone up on Skype by their email when you don't already have their username.
+Вместо того, чтобы получать ссылку в конструкторе или передавать ее как параметр, вы "находите" актора при помощи его `ActorPath` (напиминаем, что `ActorPath` это месторасположение актора в иерархии). Это чем-то похоже на поиск людей в Skype. Если вы не знаете его имени, вы можете искать по e-mail.
 
-However, be aware that while `ActorSelection` is how you look up an `IActorRef`, it's not inherently a 1-1 lookup to a single actor.
+Будьте однако осторожны, потому что `ActorSelection` не всегда даст вам одну и только одну ссылку(`IActorRef`) на актора.
 
-Technically, the `ActorSelection` object you get when you do a lookup does not point to a specific `IActorRef`. It's actually a handle that internally points to every `IActorRef` that matches the expression you looked up. Wildcards are supported in this expression, so it's an expression that selects 0+ actors. (More on this later.)
 
-An `ActorSelection` will also match two different `IActorRef`s with the same name if the first one dies and is replaced by another (not restarted, in which case it would be the same `IActorRef`).
+Технически, `ActorSelection` не обязательно указывает на конкретного актора и его `IActorRef`. На самом деле это структура, которая содержит ссылки на всех акторов, которые подходят под ваш запрос. Для этого можно использовать звездочки, так что выражение может выбрать от 0 до бесконечности акторов. (Об этом чуть позже).
 
-#### Is it an object? A process? Both?
-We think of `ActorSelection` as both a process and an object: the process of looking actor(s) up by `ActorPath`, and the object returned from that lookup, which allows us to send messages to the actor(s) matched by the expression we looked up.
+`ActorSelection` также может получить две различные ссылки (`IActorRef`) с тем же самым именем актора, если первый из них умер, и был заменен другим ( не перезапущен, поскольку при перезапуске `IActorRef` сохраняется).
 
-### Why should I care about `ActorSelection`?
-Always a great question, glad you asked! There are a number of benefits that `ActorSelection` gives you.
+#### Так это объект? Или процесс? Или и то и другое?
+Мы предпочитаем думать о  `ActorSelection` как о процессе И об объекте: процесс ищет актора(-ов) при помощи `ActorPath`, и возвращает объект, который позволяет нам отправлять сообщения всем акторам, которые попали в выборку..
 
-#### Location transparency
-What [location transparency](http://getakka.net/docs/concepts/location-transparency) actually means is that whenever you send a message to an actor, you don't need to know where they are within an actor system, which might span hundreds of computers. You don't care if your actors are all in one process or spread across 100 machines around the world. You just have to know that actors' address (its `ActorPath`).
+### Почему меня должен волновать `ActorSelection`?
+Спасибо, очень хороший вопрос!  `ActorSelection` дает вам несколько приятных возможностей.
 
-Think of it like calling someone's cell phone number - you don't need to know that your friend Bob is in Seattle, Washington, USA in order to place a call to them. You just need to dial Bob's cell phone number and your cellular network provider will take care of the rest.
+#### Независимость от месторасположения (Location transparency)
+ [Прозрачное расположение](http://getakka.net/docs/concepts/location-transparency) означате, что для того, чтобы послать сообщение актору, вам не надо знать его точное расположение в системе акторов. Потому что эта самая система может состоять из сотен машин. Вас не волнует, находятся акторы на одной физической машине или раскиданы по сотне машин на нескольких континентах. Все, что вам надо знать, это адрес актора (его `ActorPath`).
 
-The location transparency (enabled by `ActorSelection`) is essential for creating scalable systems that can handle high-availability requirements. We'll go into this more in Units 2 & 3.
+Можете провести аналогию с мобильным телефоном - вам не надо знать что ваш друг Вася сейчас селе Бродилово, Красносельского уезда, Полифонической губернии. Если вы знаете номер его телефона, вы можете ему дозвониться. Об всех сложностях маршрутизации позаботится мобильный оператор.
 
-#### Loose coupling
-Since you don't have to constantly be holding on to `IActorRef`s to store and pass around, your actors don't get tightly coupled to each other. Just like in object-oriented programming, this is a Very Good Thing. It means the components of your system stay loose and easily adaptable / reusable. It lowers the cost of maintaining your codebase.
+Прозрачное расположение (которое работает благодаря  `ActorSelection`) чрезвычайно важно для  создания масштабируемых систем, способных обеспечить высокую отказоустрочивость. Более подробно эту тему мы разберем в блоках 2 и 3.
 
-#### Dynamic behavior
-Dynamic behavior is an advanced concept that we dive into in the beginning of Unit 2, but for now just be aware that the behavior of a given actor can be very flexible. This lets actors easily represent things like Finite State Machines so a small code footprint can easily handle complex situations.
+#### Слабая связность
+Поскольку вам теперь не надо постоянно держать ссылку на `IActorRef`, и передавать ее туда-обратно, связность у ваших акторов низкая. И как мы знаем из ООП, слабая свазность это ХО-РО-ШО!. Это означате, что компоненты вашей системы слабо завзаны друг на друга, и их можно леко адаптировать и исопльзовать. Это снижает трудозатраты на поддержку решения.
 
-Where does `ActorSelection` come into play on this? Well, if you want to have a very dynamic and adaptable system, there are probably going to be lots of actors coming and going from the hierarchy and trying to store / pass around handles to all of them would be a real pain. `ActorSelection` lets you easily just send messages to well known addresses of the key actor(s) you need to communicate with, and not worry about getting/passing/storing handles to the things you need.
+#### Динамическое поведение
+Динамическое поведение актора - продвинутая концепция, в которую мы погрузимся с головой в начале второго блока. Пока просто имейте ввиду, что поведение кажого актора может быть очень гибким. ЭТо позволяет акторам работать как конечные автоматы.
 
-You also can build extremely dynamic actors where not even the `ActorPath` needed to do an `ActorSelection` is hardcoded, but can instead be represented by a message that is passed into your actor.
+Зачем для этого нужен `ActorSelection`? Нууу, если вы создаете чрезвычайно динамичную системы, где акторы постоянно появляются и исчезают, и при этом пытаются сохранять и передавать ссылки друг на друга, проблемы вам гарантированны. `ActorSelection` позволит вам отправлять сообщения только небольшому количеству действительно нужных вам акторов. И при этом вам не придется забивать себе голову проблемой корректной передачи ссылок.
 
-#### Flexible communication patterns == adaptable system
-Let's run w/ this idea of adaptability, because it's important for your happiness as a developer, the resilience of your system, and the speed at which your organization can move.
+Можно добавить еще один уровень динамики, и не хардкодить `ActorPath` внутрь актора. А получать путь внутри сообщений.
 
-Since you don't have to couple everything together to make it work, this will speed up your development cycles. You can introduce new actors and entirely new sections into the actor hierarchy without having to go back and change everything you've already written. Your system has a much more flexible communication structure that can expand and accommodate new actors (and requirements) easily.
+#### Гибкая схема общения == легко адаптируемая система
+Давайте немного разовьем эту идею адаптируемости, поскольку это очень важно для вашей счастливой жизни в роли разработчка, отказоустрочивости вашей системы, и скорости, с которой может двигаться ваша организация.
 
-#### In a nutshell: `ActorSelection` makes your system much more adaptable to change and also enables it to be more powerful.
+Поскольку сильная связность между компонентами теперь отсутствует, вы получаете ускорение разработки. Вы можете добавлять совершенно новых акторов в совершенно новые части иерархии, без перелопачивания всего прежде написанного кода. Ваша система становится более гибкой в коммуникациях и в нее можно легко добавлять новых акторов (а.к.а требования).
 
-### Okay, got it. So when do I actually use `ActorSelection`?
-#### Talking to top-level actors
-The most common case we're aware of for using `ActorSelection` is to send messages to top-level actors with well known names.
+#### В кратце: `ActorSelection` позволяет легко вносить изменения в вашу систему. 
 
-For example, let's imagine you have a top level actor that handles all authentication for your system. Other actors can send a message to that actor to find out if a user is authenticated or has permission to carry out a certain operation. Let's call this actor `AuthenticationActor`.
+### Ок, ясно. Так в каких случах все-таки пользоваться `ActorSelection`?
+#### При общение с акторами верхнего уровня
+Наиболее частый случай исопльзования `ActorSelection` - отправка сообщений акторам верхнего уровня с хорошо известными именами.
 
-Since this is a top-level actor, we now know thanks to our knowledge of hierarchies that its `ActorPath` is going to be `/user/AuthenticationActor`. Using this well-known address, **ANY** actor in the entire system can easily talk to it without needing to previously have its `IActorRef`, as in this example:
+Представьте например, что у вас есть актор верхнего уровня, который отвечает за всю аутентификацию в вашей системе. Другие акторы должны отправлять ему сообщения для того, чтобы узнать, прошел ли пользователь аутентификацию, и есть ли у него права на выполнение данной операции. Пусть это будет `AuthenticationActor`.
+
+Поскольку это актор верхнего уровня, мы знаем, что его место в иерархии будет `/user/AuthenticationActor`. Используя этот адрес, **ЛЮБОЙ** актор в системе может легко отправлять собщения, без необходимости хранить `IActorRef`. Например вот так:
 
 ```csharp
-// send username to AuthenticationActor for authentication
-// this is an "absolute" actor selection, since it starts at top-level /user/
+// посылаем имя пользователя актору AuthenticationActor для проведения аутентификации
+// Это абсолютный путь к актору, поскольку он начинается с  /user/
 Context.ActorSelection("akka://MyActorSystem/user/AuthenticationActor").Tell(username);
 ```
 
-> NOTE: `ActorSelection`s can be either absolute or relative. An absolute `ActorSelection` includes the root `/user/` actor in the path. However, an `ActorSelection` could also be relative, such as `Context.ActorSelection("../validationActor")`.
+> Замечание: `ActorSelection` может быть абсолютным либо относительным. Абсолютный `ActorSelection` включает в себя корневого актора,  `/user/` .  Однако, есть и относительные пути. например `Context.ActorSelection("../validationActor")`.
 
-#### Doing elastic processing of large data streams
-A very common extension of the well-known actor pattern is talking to routers ([docs](http://getakka.net/docs/Routing)). Routers are a more advanced topic we go in-depth on in unit 2.
+#### Обработка больших потоков данных
+Одним из очевидных расширений модели акторов являются акторы-роутеры ([docs](http://getakka.net/docs/Routing)). С акторами-роутетрами мы познакомимся во втором блоке, но небольшой пример на пальцах рассмотрим прямо сейчас.
 
-As a quick example, imagine that you had a system that needed to process a large data stream in real time. Let's say for fun that you had a very popular consumer app that had peak usage once or twice a day, like a social app that people love to use on their breaks at work. Each user is generating a flurry of activity that has to be processed and rolled up in realtime. For the sake of this example, imagine that you had an actor running per user tracking the user's activity, and feeding that data to other parts of the system.
+Предположим, что ваша система должна обрабатвать большой поток данных в реальном времени. Также предположим, что у вас очень популярная система, которая переживает пиковые нагрузки дважды в день . Как например какое-нибудь приложение для соцсетей. Какждый польователь генерирует поток активностей, который надо обработать и отобразить в реальном времени. А еще мы предположим что за активность каждого пользователя у вас отвечает отдельный актор, который перенаправляет эту активность в другие части системы.
+ 
+ (*Запомните, акторы дешевые! Создавать по одному актору на каждого пользователя может быть вполне адекватно. Когда мы проверяли последний раз, Akka.NET исползовала около 1 ГБ памяти на 2.5-3 миллиона акторов.*)
 
-(*Remember: actors are cheap! It's totally reasonable from an overhead POV to create actors for every user. Last we checked, Akka.NET could run between 2.5-3 million actors per gig of RAM.*)
+Итак, к вам приходит большой объем данных, и вы хотите быть уверены, что система остается отзывчивой под высокими нагрузками. Одним из вариантов решения может быть создание роутера (координатора заданий), который будут контролировать пул акторов, выполняющих обработку. Этот пул может динамически расширяться\сжиматься в зависимости от потребностей системы в вычислительных мощностях.
 
-There's a lot of data coming in, and you want to make sure the system stays responsive under high loads. What do you do? One good option is to create a router (or job coordinator, as some call it) and have that coordinator manage a pool of workers that do the processing. This pool of workers can then elastically expand/contract to meet the changing processing demands of the system on the fly.
+Поскольку каждый актор, привязанные к пользователю создается и уничтожается при входе\выходе пользователя из системы, как вы можете гарантировать, что данные попадут куда надо ? Вы просто посылаете необходимые данные роутерам, которые отвечают за создание\уничтожение акторов. Роутеры доступны через `ActorSelection`, поэтому динамическое создание\уничтожение рабочих акторов проходит для вас незаметно.
 
-As all these per-user actors are being created and shutting down when users leave the app, how do you consistently feed the data to the right place? You send the data to the `ActorSelection`s for all the coordinators you need to hand off processing to.
+#### Когда просто отправить ответ недостаточно
+Одним из наиболее исопльзуемых `IActorRef`-ов является свойво `Sender`(отправитель) у актора. Это свойство доступно в контексте каждого актора, и содержит отправителя текущего обрабатываемого сообщения. В предыдущих уровках мы использовали его внутри метода `OnReceive` актора  `FileValidatorActor`, чтобы отправить результат валидации файла отправителю. 
 
-#### When not just replying
-A very commonly used `IActorRef` is `Sender`, which is the `IActorRef` made available to every actor context and is a handle to the sender of the message currently being processed. In an earlier lesson, we used this inside `FileValidatorActor`'s `OnReceive` method to easily send a confirmation message back to the sender of the message that was being validated by `FileValidatorActor`.
+Но что делать, если во время обработки сообщения нам необходимо отправить сообщение другому актору, который не является отправителем текущего сообщения? Использовать `ActorSelection`, естественно.
 
-But what if, as part of processing a message, you need to send a message to another actor who is not the `Sender` of your current message? `ActorSelection` FTW.
+#### Ответ нескольким акторам одновременно
+Другим популярным сценарием может быть отправка сообщения сразу нескольким акторам. Например, у вас есть группа сервисов, отвечающих за сбор статистки. Используя `ActorSelection` вы можете послать сообщение одновременно всем акторам, используя звездочку в  `ActorSelection`. 
 
-#### Reporting to multiple endpoints at once
-Another common case is that you may have some piece of information you want to report to multiple other actors, that perhaps each run a stats service. Using `ActorSelection`, you could send the same piece of data as a message to all of those services at once, if they shared a similar well-known naming scheme. This is one good use case for a wildcard `ActorSelection`.
+### Внимание: Не передавайте `ActorSelection` как ссылку.
+Мы настойчиво НЕ СОВЕТУЕМ передавать `ActorSelection` как параметр. Потому что путь может быть не только абсолютным, но и относительным. А  относительный путь может добавить много сюрпризов, если будет расчитываться от неверного места в иерархии.
 
-### Caution: Don't pass `ActorSelection`s around
-We encourage you NOT to pass around `ActorSelection`s as pararmeters, the way you do `IActorRef`s. The reason for this is that `ActorSelection`s can be relative instead of absolute, in which case it wouldn't produce the intended effects when passed to an actor with a different location in the hierarchy.
+### Как создать `ActorSelection`?
+Очень просто: `var selection = Context.ActorSelection("/path/to/actorName")`
 
-### How do I make an `ActorSelection`?
-Very simple: `var selection = Context.ActorSelection("/path/to/actorName")`
-
-> NOTE: **the path to an actor includes the name you assign to an actor when you instantiate it, NOT its class name. If you don't assign a name to an actor when you create it, the system will auto-generate a unique name for you**. For example:
+> ВНИМАНИЕ: **путь к актору должен содержать имя, которое вы дали ему при создании. Если вы не укажете имя актора при создании, система сама сгенерирует для него уникальное имя.**. Например:
 
 ```csharp
 class FooActor : UntypedActor {}
 Props props = Props.Create<FooActor>();
 
-// the ActorPath for myFooActor is "/user/barBazActor"
-// NOT "/user/myFooActor" or "/user/FooActor"
+//  ActorPath для myFooActor будет "/user/barBazActor"
+// А НЕ "/user/myFooActor" или "/user/FooActor"
 IActorRef myFooActor = MyActorSystem.ActorOf(props, "barBazActor");
 
-// if you don't specify a name on creation as below, the system will
-// auto generate a name for you, so the actor path will
-// be something like "/user/$a"
+// Если вы не указываете имя актора при создании, 
+// система сгенерирует уникальное имя
+// и путь к актору будет вроде такого "/user/$a"
 IActorRef myFooActor = MyActorSystem.ActorOf(props);
 ```
 
-### Do I send a message differently to an `ActorSelection` vs an `IActorRef`?
-Nope. You `Tell()` an `ActorSelection` a message just the same as an `IActorRef`:
+### Отсылка сообщения через `ActorSelection` чем-то отличается от отсылки через `IActorRef`?
+Неа. Вы просто вызываете  `Tell()` в `ActorSelection`, точно так же как и в  `IActorRef`:
 
 ```csharp
 var selection = Context.ActorSelection("/path/to/actorName");
 selection.Tell(message);
 ```
 
-## Exercise
-Alright, let's get to it. This exercise will be short. We are only making some small optimizations to our system.
+## Упражнение
+Ну что ж, начнем. Это будет короткое и простое упражнение. Добавим в нашу системы несколько оптимизаций.
 
-### Phase 1: Decouple `ConsoleReaderActor` and `FileValidatorActor`
-Right now, our `ConsoleReaderActor` needs to be given an `IActorRef` to be able to send the messages it reads from the console off for validation. In the current design, that's easy enough.
+### Фаза 1: Уберем связность между `ConsoleReaderActor` и `FileValidatorActor`
+Сейчас нашему актору `ConsoleReaderActor` нужна ссылка `IActorRef`, чтобы посылать сообщения, который он прочитал на валидацию. Сейчас это не сильно сложно.
 
-BUT, imagine that `ConsoleReaderActor` was far away in the hierarchy from where the `FileValidatorActor` instance was created (`Program.cs` currently). In this case, there is no clean/easy way to pass in the needed `IActorRef` to `ConsoleReaderActor` without also passing it through every intermediary first.
+НО представьте, что `ConsoleReaderActor` находится далеко от `FileValidatorActor` в рамках иерархии. В этом случае передать ссылку  без использования всех промежуточных звеньев будет довольно непросто. 
 
-Without `ActorSelection`, you'd have to pass the necessary `IActorRef` through every object between where the handle is created and used. That is coupling more and more objects together--**yuck**!
+Без  `ActorSelection`,  вам бы пришлось передавать `IActorRef` через каждый объект, который находится по пути. Это бы превратило бы ваш код в огромную тарелку сильносвязанных спагетти. --**фууууу**!
 
-Let's fix that by **removing the `validationActor` `IActorRef` that we're passing in**. The top of `ConsoleReaderActor` should now look like this:
+Исправим это досадное неразумение, **удалив ссылку на `validationActor` **
+Теперь `ConsoleReaderActor` должен выглядеть так:
 
 ```csharp
 // ConsoleReaderActor.cs
-// note: we don't even need our own constructor anymore!
+// Обратите внимание, нам теперь даже не нужен собственный конструктор
 public const string StartCommand = "start";
 public const string ExitCommand = "exit";
 
@@ -151,29 +153,31 @@ protected override void OnReceive(object message)
 }
 ```
 
-Then, let's update the call for message validation inside `ConsoleReaderActor` so that the actor doesn't have to hold onto a specific `IActorRef` and can just forward the message read from the console onto an `ActorPath` where it knows validation occurs.
+После этого обновим вызов метода валидации внутри `ConsoleReaderActor`. Актору теперь не надо хранить ссылку, он может отправить сообщение по `ActorPath`-у валидации.
+
 
 ```csharp
 // ConsoleReaderActor.GetAndValidateInput
 
-// otherwise, just send the message off for validation
+// просто пошлем сообщение о валидации
 Context.ActorSelection("akka://MyActorSystem/user/validationActor").Tell(message);
 ```
 
-Finally, let's update `consoleReaderProps` accordingly in `Program.cs` since its constructor no longer takes any arguments:
+И в конце концов обновим создание `consoleReaderProps` в `Program.cs`, посольку мы уже не передаем параметров в конструктор:
 ```csharp
 // Program.Main
 Props consoleReaderProps = Props.Create<ConsoleReaderActor>();
 ```
 
-### Phase 2: Decouple `FileValidatorActor` and `TailCoordinatorActor`
-Just as with `ConsoleReaderActor` and `FileValidatorActor`, the `FileValidatorActor` currently requires an `IActorRef` for the `TailCoordinatorActor` which it does not need. Let's fix that.
+### Фаза 2: Развяжем `FileValidatorActor` и `TailCoordinatorActor`
+Как и в предыдущей фазе,  `FileValidatorActor`-у нужна ссылка`IActorRef` на `TailCoordinatorActor`. Но можно обойтись и без нее
 
-First, **remove the `tailCoordinatorActor` argument to the constructor of `FileValidatorActor` and remove the accompanying field on the class**. The top of `FileValidatorActor.cs` should now look like this:
+Перво наперво, **уберем аргумент `tailCoordinatorActor` из конструктора `FileValidatorActor`, вместе с полем для хранения этой ссылки**. 
+Класс `FileValidatorActor.cs` должен выглядеть приблизительно так:
 
 ```csharp
 // FileValidatorActor.cs
-// note that we're no longer storing _tailCoordinatorActor field
+// обратите внимание, что нам больше не надо хранить поле _tailCoordinatorActor
 private readonly IActorRef _consoleWriterActor;
 
 public FileValidatorActor(IActorRef consoleWriterActor)
@@ -182,31 +186,31 @@ public FileValidatorActor(IActorRef consoleWriterActor)
 }
 ```
 
-Then, let's use `ActorSelection` to communicate between `FileValidatorActor` and `TailCoordinatorActor`! Update `FileValidatorActor` like this:
+Теперь воспользуемся `ActorSelection` для общения между `FileValidatorActor` и `TailCoordinatorActor`! Обновите `FileValidatorActor`:
 ```csharp
 // FileValidatorActor.cs
 // start coordinator
 Context.ActorSelection("akka://MyActorSystem/user/tailCoordinatorActor").Tell(new TailCoordinatorActor.StartTail(msg, _consoleWriterActor));
 ```
 
-And finally, let's update `fileValidatorProps` in `Program.cs` to reflect the different constructor arguments:
+И не забудьте обновить `fileValidatorProps` в `Program.cs`:
 
 ```csharp
 // Program.Main
 Props fileValidatorActorProps = Props.Create(() => new FileValidatorActor(consoleWriterActor));
 ```
 
-### Phase 3: Build and Run!
-Awesome! It's time to fire this baby up and see it in action.
+### Фаза 3: Собираем и запускаем!
+Лепота! Попробуем поглядеть на наше решение в работе.
 
-Just as with the last lesson, you should be able to hit `F5` and run your log/text file and see additions to it appear in your console.
+Как и в прошлом уроке, запустите приложение нажав `F5`, измените текстовый/лог файл, и наблюдайте за информацией в консоли.
 
 ![Petabridge Akka.NET Bootcamp Actor Selection Working](Images/selection_working.png)
 
-### Hey, wait, go back! What about that `consoleWriterActor` passed to `FileValidatorActor`? Wasn't that unnecessarily coupling actors?
-Oh. You're good, you.
+### Эй эй эй! Мииинуточку. А как насчет `consoleWriterActor`, который передается в `FileValidatorActor`? Может от этой зависимости тоже стоит избавиться?
+Ох. Да, вы правы.
 
-We assume you're talking about this `IActorRef` that is still getting passed into `FileValidatorActor`:
+Я так думаю вы сейчас имеете ввиду `IActorRef`, который передается в `FileValidatorActor`:
 
 ```csharp
 // FileValidatorActor.cs
@@ -218,32 +222,32 @@ public FileValidatorActor(IActorRef consoleWriterActor)
 }
 ```
 
-*This one is a little counter-intuitive*. Here's the deal.
+*Этот код не очень интуитивно-понятен*. Вот в чем тут дело.
 
-In this case, we aren't using the handle for `consoleWriterActor` to talk directly to it. Instead we are putting that `IActorRef` inside a message that is getting sent somewhere else in the system for processing. When that message is received, the receiving actor will know everything it needs to in order to do its job.
+В этом случае мы  не используем ссылку на`consoleWriterActor` для того, чтобы отправлять сообщения ему напрямую. Вместо этого мы сохраняем `IActorRef` внутри сообщения, которое передается в другую часть системы.  Когда сообщение доставлено, у получателя есть все данные, необходимые для выполнения работы.
 
-This is actually a good design pattern in the actor model, because it makes the message being passed entirely self-contained and keeps the system as a whole flexible, even if this one actor (`FileValidatorActor`) needs an `IActorRef` passed in and is a little coupled.
+Это одно из правил хорошего тона работы в рамках модели акторов. Сообщение содержит в себе всю необходимую информацию, и позволяет всей системе быть достаточно гибкой. Даже несмотря на то, что связность одного из акторов (`FileValidatorActor`) увеличивается.
 
-Think about what is happening in the `TailCoordinatorActor` which is receiving this message: the job of the `TailCoordinatorActor` is to manage `TailActor`s which will actually observe and report file changes to... somewhere. We get to specify that somewhere up front.
+Подумайте о `TailCoordinatorActor`, который получит это сообщение. Он контролирует работу `TailActor`-а, который в свою очередь выполняет всю работу по отслеживанию изменений и отправке нотификаций... куда-то. И это куда-то должно быть определено заранее.
 
-`TailActor` should not have the reporting output location written directly into it. The reporting output location is a task-level detail that should be encapsulated as an instruction within the incoming message. In this case, that task is our custom `StartTail` message, which indeed contains the `IActorRef` for the previously mentioned `consoleWriterActor` as the `reporterActor`.
+`TailActor` не должен хранить жестко заданное место для вывода данных. Для разных задач может понадобитсья выводить данные в разные места. Поэтому поток для вывода должен быть параметром, который мы получаем в сообщении. В нашем случае это сообщение `StartTail`, которое содержит ссылку `IActorRef` на `consoleWriterActor`-а,  который будет `reporterActor`-ом.
 
-So, a little counter-intuitively, this pattern actually promotes loose coupling. You'll see it a lot as you go through Akka.NET, especially given the widespread use of the pattern of turning events into messages.
+Вот так вот немного контринтуитивно это паттерн позволяет обеспечить слабую связность. По мере погружения в мир Akka.NET вы увидите множество подобных примеров. Особенно часто этот паттерн используется когда необходимо преобразовать события в сообщения.
 
-### Once you're done
-Compare your code to the solution in the [Completed](Completed/) folder to see what the instructors included in their samples.
+### Когда все сделано
+Сравните код, который у вас вышел с примером [Completed](Completed/) , обратите внимание на комментарии в примере.
 
-## Great job! Almost Done! Onto Lesson 6!
-Awesome work! Well done on completing this lesson! We're on the home stretch of Unit 1, and you're doing awesome.
-
-
-**Let's move onto [Lesson 6 - The Actor Lifecycle](../lesson6).**
+## Отличная работа! Осталось совсем чуть-чуть! вперед к уроку №6!
+Здорово поработали! Поздравляем с завершением данного урока! Вы очень близки к завершению блока 1, и у вас все отлично получается.
 
 
-## Any questions?
-**Don't be afraid to ask questions** :).
+**Переходим к [Уроку 6 - Жизненный цикл акторов](../lesson6).**
 
-Come ask any questions you have, big or small, [in this ongoing Bootcamp chat with the Petabridge & Akka.NET teams](https://gitter.im/petabridge/akka-bootcamp).
+## Есть вопросы?
+**Не стесняйтесь задавать вопроосы** :).
 
-### Problems with the code?
-If there is a problem with the code running, or something else that needs to be fixed in this lesson, please [create an issue](https://github.com/petabridge/akka-bootcamp/issues) and we'll get right on it. This will benefit everyone going through Bootcamp.
+Можете задавать любые вопросы, большие и маленькие, [в этом чате команд Petabridge и Akka.NET (английский)](https://gitter.im/petabridge/akka-bootcamp).
+
+### Проблемы с кодом?
+Если у вас возникил проблемы с запуском кода или чем-то другим, что необходимо починить в уроке, пожалуйста, [создайте issue](https://github.com/petabridge/akka-bootcamp/issues) и мы это пофиксим. Таким образом вы поможете всем кто будет проходить эту обучалку.
+
