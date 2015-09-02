@@ -75,50 +75,50 @@ protected override void PreStart()
 }
 ```
 
-### Which are the most commonly used life cycle methods?
+### Какие методы жизенного цикла используются больше всего ??
 #### `PreStart`
-`PreStart` is far and away the most common hook method used. It is used to set up initial state for the actor and run any custom initialization logic your actor needs.
+`PreStart` Самый популярный (с большим отрывом от конкурентов).  Он используется для установки первоначального состояния актора, и выполнения любых действий в процессе инициализации..
 
 #### `PostStop`
-The second most common place to hook into the life cycle is in `PostStop`, to do custom cleanup logic. For example, you may want to make sure your actor releases file system handles or any other resources it is consuming from the system before it terminates.
+Второй наиболее используемый метод - `PostStop`,  позволяет производить очистку ресурсов. Например, закрывать файловые (или другие неуправляемые)ресурсы преед своим завершением.
 
 #### `PreRestart`
-`PreRestart` is in a distant third to the above methods, but you will occasionally use it. What you use it for is highly dependent on what the actor does, but one common case is to stash a message or otherwise take steps to get it back for reprocessing once the actor restarts.
+`PreRestart` на почетном третьем месте. Он используется доволно редко, но бывает очень полезен. Например можно сохранить сообщение в специальный стек, или сохранить состояние актора каким-то другим образом. Тогда после перезапуска актор сможет восстановить свое состояне.
 
-### How does this relate to supervision?
-In the event that an actor accidentally crashes (i.e. throws an unhandled Exception,) the actor's supervisor will automatically restart the actor's lifecycle from scratch - without losing any of the remaining messages still in the actor's mailbox.
+### Какое отношение жизненный цикл и методы имеют к супервизорам?
+В том случае, если актор упадет (выбросит необработанное исключение), супервизор этого актора автоматически перезапустит его. И жизенный цикл актора начнется с самого начала. Без потери сообщений, которые находятся в его почтовом ящике.
 
-As we covered in lesson 4 on the actor hierarchy/supervision, what occurs in the case of an unhandled error is determined by the `SupervisionDirective` of the parent. That parent can instruct the child to terminate, restart, or ignore the error and pick up where it left off. The default is to restart, so that any bad state is blown away and the actor starts clean. Restarts are cheap.
+На четвертом уроке мы выяснили, что поведение в случае необработанных исключений зависит от директивы супервизора (`SupervisionDirective`). Супервизор может сказать дочернему актору перезапуститься, остановиться или проигнорировать ошибку и продолжить выполнение. По умолчанию актор будет перезапущен, с очисткой всех данных, которые возомжно привели к исключению. Перезапуск выоплняется очень быстро, поэтому можно сильно не беспокоиться о производительности.
 
-## Exercise
-This final exercise is very short, as our system is already complete. We're just going to use it to optimize the initialization and shutdown of `TailActor`.
+## Упражнение
+Это упражнение будет очень коротким, поскольку наша система уже полностью готова. Нам предстоит улучшить процессы инициализации и остановки актора `TailActor`.
 
-### Move initialization logic from `TailActor` constructor to `PreStart()`
-See all this in the constructor of `TailActor`?
+### Переносим инициализацию из конструктора `TailActor` в `PreStart()`
+Видите, сколько всего происходит в конструкции `TailActor`?
 
 ```csharp
-// TailActor.cs constructor
-// start watching file for changes
+// Начинаем следить за именением файла
 _observer = new FileObserver(Self, Path.GetFullPath(_filePath));
 _observer.Start();
 
-// open the file stream with shared read/write permissions (so file can be written to while open)
+// Открываем файловый поток с правами на разделенные чтение\запись (таким образом можно одновременно записывать и читать из файла)
+
 _fileStream = new FileStream(Path.GetFullPath(_filePath), FileMode.Open, FileAccess.Read,
     FileShare.ReadWrite);
 _fileStreamReader = new StreamReader(_fileStream, Encoding.UTF8);
 
-// read the initial contents of the file and send it to console as first message
+// Читаем первоначальное содержимое файла и выводим результат на консоль
 var text = _fileStreamReader.ReadToEnd();
 Self.Tell(new InitialRead(_filePath, text));
 ```
 
-While it works, initialization logic really belongs in the `PreStart()` method.
+Несомненно, этот код рабочий, но логику инициализации следует расположить в методе `PreStart()`.
 
-Time to use your first life cycle method!
+Самое время воспользоваться нашими знаниями о жизненном цикле актора!
 
-Pull all of the above init logic out of the `TailActor` constructor and move it into `PreStart()`. We'll also need to change `_observer`, `_fileStream`, and `_fileStreamReader` to non-readonly fields since they're moving out of the constructor.
+Перенесите всю логику из конструктора `TailActor` в `PreStart()`. Также придется убрать `readonly` модификатор у полей `_observer`, `_fileStream`, и `_fileStreamReader`, поскольку они уже инициализируются не в конструкторе.
 
-The top of `TailActor.cs` should now look like this
+Начало файла `TailActor.cs` должно выглядеть подобным образом
 
 ```csharp
 // TailActor.cs
@@ -155,17 +155,17 @@ protected override void PreStart()
 }
 ```
 
-Much better! Okay, what's next?
+Намного лучше! Ладно, что дальше?
 
-### Let's clean up and take good care of our `FileSystem` resources
-`TailActor` instances are each storing OS handles in `_fileStreamReader` and `FileObserver`. Let's use `PostStop()` to make sure those handles are cleaned up and we are releasing all our resources back to the OS.
+### Самое время позаботится о корректном закрытии ресурсов  файловой системы `FileSystem`
+`TailActor` создает файловые ресурсы и хранит их в полях `_fileStreamReader` и `FileObserver`. Воспользуемся методом `PostStop()`, чтобы гарантировать очистку этих ресурсов.
 
-Add this to `TailActor`:
+Добавьте этот код в `TailActor`:
 
 ```csharp
 // TailActor.cs
 /// <summary>
-/// Cleanup OS handles for <see cref="_fileStreamReader"/> and <see cref="FileObserver"/>.
+/// Очищает файловые ресурсы для <see cref="_fileStreamReader"/> и <see cref="FileObserver"/>.
 /// </summary>
 protected override void PostStop()
 {
@@ -177,21 +177,21 @@ protected override void PostStop()
 }
 ```
 
-### Phase 4: Build and Run!
-That's it! Hit `F5` to run the solution and it should work exactly the same as before, albeit a little more optimized. :)
+### Фаза 4: Собираем и запускаем!
+Вот оно! После нажатия `F5` приложение будет работать точно так  же, как и раньше, но будет более лучше оптимизированным :)
 
-### Once you're done
-Compare your code to the solution in the [Completed](Completed/) folder to see what the instructors included in their samples.
+### Когда все сделано
+Сравните код, который у вас вышел с примером [Completed](Completed/) , обратите внимание на комментарии в примере.
 
-## Great job!
-### WOW! YOU WIN! Phenomenal work finishing Unit 1.
+## Отличная работа!
+### УРРРЯЯ! ВЫ ПОБЕДИЛИ! Феноменально успешное завершение первого блока.
 
-**Ready for more? [Start Unit 2 now](../../Unit-2 "Akka.NET Bootcamp Unit 2").**
+**Хочется большего? [Начать второй блок СЕЙЧАС](../../Unit-2 "Akka.NET Bootcamp Unit 2").**
 
-## Any questions?
-**Don't be afraid to ask questions** :).
+## Есть вопросы?
+**Не стесняйтесь задавать вопроосы** :).
 
-Come ask any questions you have, big or small, [in this ongoing Bootcamp chat with the Petabridge & Akka.NET teams](https://gitter.im/petabridge/akka-bootcamp).
+Можете задавать любые вопросы, большие и маленькие, [в этом чате команд Petabridge и Akka.NET (английский)](https://gitter.im/petabridge/akka-bootcamp).
 
-### Problems with the code?
-If there is a problem with the code running, or something else that needs to be fixed in this lesson, please [create an issue](https://github.com/petabridge/akka-bootcamp/issues) and we'll get right on it. This will benefit everyone going through Bootcamp.
+### Проблемы с кодом?
+Если у вас возникил проблемы с запуском кода или чем-то другим, что необходимо починить в уроке, пожалуйста, [создайте issue](https://github.com/petabridge/akka-bootcamp/issues) и мы это пофиксим. Таким образом вы поможете всем кто будет проходить эту обучалку.
