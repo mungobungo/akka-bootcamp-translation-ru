@@ -1,15 +1,16 @@
-# Akka.NET Bootcamp
+# Тренировочный центр Akka.NET
 
 ![Akka.NET logo](images/akka_net_logo.png)
 
-Welcome to [Akka.NET](http://getakka.net/ "Akka.NET - Distributed actor model in C# and F#") Bootcamp! This is a free, self-directed learning course brought to you by the folks at [Petabridge](http://petabridge.com/ "Petabridge - Akka.NET Training, Consulting, and Support").
+Добро пожаловать в тренировочный центр [Akka.NET](http://getakka.net/ "Akka.NET - Distributed actor model in C# and F#")!  Это бесплатный курс, созданный для вас ребятами из [Petabridge](http://petabridge.com/ "Petabridge - Akka.NET Training, Consulting, and Support") и переведенный мну.
 
-[![Join the chat at https://gitter.im/petabridge/akka-bootcamp](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/petabridge/akka-bootcamp?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
+[![Можно присоединиться к англоязычному чату здесь https://gitter.im/petabridge/akka-bootcamp](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/petabridge/akka-bootcamp?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 
-Over the three units of this bootcamp you will learn how to create fully-functional, real-world programs using Akka.NET actors and many other parts of the core Akka.NET framework!
+В трех блоках мы научим вас создавать полезныу полнофункциональные программы, используя возможности акторов Akka.NET, и другие не менее увлекательные вещи из арсенала Akka.NET.
 
-We will start with some basic actors and have you progressively work your way up to larger, more sophisticated examples.
+Мы начнем с создания простых акторов, и будем улучшать программу до полноценного приложения.
 
+Этот курс никак не ограничен по времени, вы сами выбираете, с какой скоростью хотите проходить обучение.
 The course is self-directed learning. You can do it at whatever pace you wish. You can [sign up here to have one Akka.NET Bootcamp lesson emailed to you daily](http://learnakka.net/ "Learn Akka.NET with Akka.NET Bootcamp") if you'd like a little help pacing yourself throughout the course.
 
 > NOTE: F# support is in progress (see the [FSharp branch](https://github.com/petabridge/akka-bootcamp/tree/FSharp)). We will happily accept F# pull requests. Feel free to send them in.
