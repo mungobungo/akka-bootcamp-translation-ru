@@ -114,32 +114,32 @@ src\Unit1\Lesson1\Completed\ - Застряли на выполнении уро
 
 Несколько вещей, на которые стоит обраттиь внимание при выполнении пошаговых инструкций:
 
-1. **Don't just copy and paste the code shown in the lesson's README**. You'll retain and learn all of the built-in Akka.NET functions if you type out the code as it's shown. [Kinesthetic learning](http://en.wikipedia.org/wiki/Kinesthetic_learning) FTW!
-2. **You might be required to fill in some blanks during individual lessons.** Part of helping you learn Akka.NET involves leaving some parts of the exercise up to you - if you ever feel lost, always check the contents of the `/Completed` folder for that lesson.
-3. **Don't be afraid to ask questions**. You can [reach the Petabridge and Akka.NET teams in our Gitter chat](https://gitter.im/petabridge/akka-bootcamp) here.
+1. **Не надо копипастить создержимое README**. Вы намного лучше усвоите материал, и запомните функции Akka.NET, если будете набирать код руками. [Мышечная память](http://en.wikipedia.org/wiki/Kinesthetic_learning) и все такое прочее!
+2. **Иногда вам придется заполнять пропущенные куски кода.** . Если вы почувствуете, что запутались, вам поможет папка `/Completed` для соответствующего урока.
+3. **Не стесняйтесь задавать вопросы**. Это можно сделать [В чате](https://gitter.im/petabridge/akka-bootcamp).
 
 
-## Docs
-We will provide explanations of all key concepts throughout each lesson, but of course, you should bookmark (and feel free to use!) the [Akka.NET docs](http://getakka.net/).
+## Документация
+Мы будем объяснять все идеи на соответствующих урках, но рекомендуем вам сохранить в закладках и пользоваться [ официальной документацией Akka.NET](http://getakka.net/).
 
-## Tools / prerequisites
-This course expects the following:
+## Инструменты / необходимые ингридиенты
+Данный курс предполагает:
 
-- You have some programming experience and familiarity with C#
-- A Github account and basic knowledge of Git.
-- You are using a version of Visual Studio ([it's free now!](http://www.visualstudio.com/))
-  - We haven't had a chance to test these in Xamarin / on Mono yet, but that will be coming soon. If you try them there, please let us know how it goes! We are planning on having everything on all platforms ASAP.
+- Что у вас есть опыт программирования и вы знаете C#
+- У вас есть учетка на Github и умение пользоваться Git-ом.
+- Установлена Visual Studio ([можно использовать бесплатную версию](http://www.visualstudio.com/))
+  - Мы еще не проводили тестирование для  Xamarin / Mono , но обязательно сделаем это. Если вы будете заниматься  используя эти окружения, дайте нам знать, как у вас все прошло. Мы планируем поддерживать все платформы ASAP.
 
 
-## Enough talk, let's go!
-[Let's begin!](src/Unit-1/lesson1)
+## Хватит разговоров! Поехали!
+[Начнем!](src/Unit-1/lesson1)
 
-## About Petabridge
+## О Petabridge
 ![Petabridge logo](images/petabridge_logo.png)
 
-[Petabridge](http://petabridge.com/) is a company dedicated to making it easier for .NET developers to build distributed applications.
+[Petabridge](http://petabridge.com/) компания, цель которой помогать разработчикам .NET создавать распределенные приложения.
 
-**[Petabridge also offers Akka.NET consulting and training](http://petabridge.com/ "Petabridge Akka.NET consulting and training")** - so please [sign up for our mailing list](http://petabridge.com/)!
+**[Petabridge также предлагает консультации и тренинги по  Akka.NET ](http://petabridge.com/ "Petabridge Akka.NET consulting and training")** - можно подписаться [на нашу рассылку](http://petabridge.com/)!
 
 ---
 Copyright 2015 Petabridge, LLC
