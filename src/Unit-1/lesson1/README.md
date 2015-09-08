@@ -127,9 +127,6 @@ using Akka.Actor;
 ```csharp
 MyActorSystem = ActorSystem.Create("MyActorSystem");
 ```
->
-> **NOTE:** When creating `Props`, `ActorSystem`, or `ActorRef` you will very rarely see the `new` keyword. These objects must be created through the factory methods built into Akka.NET. If you're using `new` you might be making a mistake.
-
 
 > **Внимание** При создании `Props`, `ActorSystem`, или `ActorRef` вы редко будете пользоваться ключевым словом `new` . Эти объекты должны создаваться только при помощи фабричных методов встроенных в Akka.NET. Пользоваться `new` - значит совершать ошибку.
 

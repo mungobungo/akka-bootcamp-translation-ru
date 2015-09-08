@@ -11,106 +11,108 @@
 Мы начнем с создания простых акторов, и будем улучшать программу до полноценного приложения.
 
 Этот курс никак не ограничен по времени, вы сами выбираете, с какой скоростью хотите проходить обучение.
-The course is self-directed learning. You can do it at whatever pace you wish. You can [sign up here to have one Akka.NET Bootcamp lesson emailed to you daily](http://learnakka.net/ "Learn Akka.NET with Akka.NET Bootcamp") if you'd like a little help pacing yourself throughout the course.
+Также можно подписаться на [ежедневную рассылку уроков](http://learnakka.net/ "Learn Akka.NET with Akka.NET Bootcamp").
 
-> NOTE: F# support is in progress (see the [FSharp branch](https://github.com/petabridge/akka-bootcamp/tree/FSharp)). We will happily accept F# pull requests. Feel free to send them in.
 
-## What will you learn?
-In Akka.NET Bootcamp you will learn how to use Akka.NET actors to build reactive, concurrent applications.
+> Замечание:  Поддержка F# все еще в процессе ( более подробно смотрите на [FSharp branch](https://github.com/petabridge/akka-bootcamp/tree/FSharp)). Мы с удовольствием примем пулл-риквесты  для F#. Не стесняйтесь их отсылать.
 
-You will learn how to build types of applications that may have seemed impossible or really, really hard to make prior to learning Akka.NET. You will walk away from this bootcamp with the confidence to handle bigger and harder problems than ever before!
+## Чему вы научитесь?
+В тренировочном центре Akka.NET вы научитесь использовать акторов Akka.NET для построения реактивных, параллельных приложений.
 
-### Unit 1
-In Unit 1, we will learn the fundamentals of how the actor model and Akka.NET work.
+Вы узнаете как можно создавать приложения, которые казались вам очень сложными (если не невозможными) до изучения Akka.NET. Вы уйдуте от сюда с уверенностью, что вы можете решать более и более сложные проблемы, чем все те, с которыми вы встречались ранее.
 
-*NIX systems have the `tail` command built-in to monitor changes to a file (such as tailing log files), whereas Windows does not. We will recreate `tail` for Windows and use the process to learn the fundamentals.
+### Блок 1
+В первом блоке мы изучим основы работы акторов и всей системы Akka.NET в целом.
 
-In Unit 1 you will learn:
+В состав *NIX  входит встроенная команда `tail`, которая позволяет отслеживать изменения в файле (например наблюдать за постоянно растущим  файлом логов). Мы создадим аналог команды `tail` для Windows и одновременно получим практические навыки работы с акирпами.
 
-1. How to create your own `ActorSystem` and actors;
-2. How to send messages actors and how to handle different types of messages;
-3. How to use `Props` and `IActorRef`s to build loosely coupled systems.
-4. How to use actor paths, addresses, and `ActorSelection` to send messages to actors.
-5. How to create child actors and actor hierarchies, and how to supervise children with `SupervisionStrategy`.
-6. How to use the Actor lifecycle to control actor startup, shutdown, and restart behavior.
 
-**[Begin Unit 1](src/Unit-1)**.
+В блоке №1 вы изучите:
 
-### Unit 2
-In Unit 2, we're going to get into some more of the intermediate Akka.NET features to build a more sophisticated application than what we accomplished at the end of unit 1.
+1. Как создавать вашу собственную систему акторов(`ActorSystem`) и акторов;
+2. Как посылать сообщения акторам, и как обрабатывать разные типы сообщений;
+3. Как использовать `Props` и `IActorRef`-ы  для построения систем с низкой связностью.
+4. Как использовать пути к акторам, из адреса и `ActorSelection` для отправки сообщений другим акторам.
+5. Как создавать дочерних акторов и иерархии акторов. Как контролировать дочерних акторов при помощи `SupervisionStrategy`.
+6. Как контролировать действия происходящие при запуске, остановке, и перезапуске актора.
 
-In Unit 2 you will learn:
+**[Начать изучение блока №1](src/Unit-1)**.
 
-1. How to use [HOCON configuration](http://getakka.net/wiki/Configuration "Akka.NET HOCON Configurations") to configure your actors via App.config and Web.config;
-1. How to configure your actor's [Dispatcher](http://getakka.net/wiki/Dispatchers) to run on the Windows Forms UI thread, so actors can make operations directly on UI elements without needing to change contexts;
-1. How to handle more sophisticated types of pattern matching using `ReceiveActor`;
-1. How to use the `Scheduler` to send recurring messages to actors;
-1. How to use the [Publish-subscribe (pub-sub) pattern](http://en.wikipedia.org/wiki/Publish%E2%80%93subscribe_pattern) between actors;
-1. How and why to switch actor's behavior at run-time; and
-2. How to `Stash` messages for deferred processing.
+### Блок №2
+Во втором блоке мы погрузимся в коцепции, которые позволят вам создавть более сложные приложения, чем то, которое было в первом блоке.
 
-**[Begin Unit 2](src/Unit-2)**.
+В блоке №2 вы узнаете:
 
-### Unit 3 
-In Unit 3, we will learn how to use actors for parallelism and scale-out using [Octokit](http://octokit.github.io/) and data from Github repos!
+1. Как использовать [конфигурацию HOCON](http://getakka.net/wiki/Configuration "Akka.NET HOCON Configurations") для конфигурации ваших акторов при помощи App.config и Web.config;
+1. Как сконфигурировать диспетчера акторов [Dispatcher](http://getakka.net/wiki/Dispatchers) таким образом, чтобы акторы выполнялись в потоке Windows Forms UI. Таким образом акторы смогут производить действия над контролами, без необходимости смены контекстов;
+1. Как обрабатывать сложные типы сообщений при помощи сопоставления с образцом в `ReceiveActor`;
+1. Как исопльзовать планировщик (`Scheduler`) для периодической отправки сообщений;
+1. Как использовать паттерн [Publish-subscribe (pub-sub)](http://en.wikipedia.org/wiki/Publish%E2%80%93subscribe_pattern) между акторами;
+1. Как и зачем менять поведение актора во время выполнения программы; и
+2. Как сохранять сообщения в стек(`Stash`) актора для последующей обработки.
 
-In Unit 3 you will learn:
+**[Приступить к изучению блока №2](src/Unit-2)**.
 
-1. How to perform work asynchronously inside your actors using `PipeTo`;
-2. How to use `Ask` to wait inline for actors to respond to your messages;
-2. How to use `ReceiveTimeout` to time out replies from other actors;
-4. How to use `Group` routers to divide work among your actors;
-5. How to use `Pool` routers to automatically create and manage pools of actors; and
-6. How to use HOCON to configure your routers.
+### Блок № 3 
+Третий блок позволит узнать как использовать [Octokit](http://octokit.github.io/) с максимальной параллелизацией и масштабируемостью для того, чтобы доставать данные из репозиториев Github!
 
-**[Begin Unit 3](src/Unit-3)**.
+В блоке № 3 вы изучите:
 
-## How to get started
+1. Как выполнять асинхронную работу внутри акторов при помощи `PipeTo`;
+2. Как пользоваться `Ask` для блокирующего ожидания ответа от другого актора ;
+2. Как использовать `ReceiveTimeout` для контроля таймаутов ответа от других акторов;
+4. Как использовать роутер `Group` для разделения работы между вашими акторами;
+5. Как исользовать роутеры `Pool` для автоматического масштабирования пула акторов; и
+6. Как использовать HOCON для конфигурации роутеров.
 
-Here's how Akka.NET bootcamp works!
+**[Начать блок №3](src/Unit-3)**.
 
-### Use Github to Make Life Easy
+## Вводная
 
-This Github repository contains Visual Studio solution files and other assets you will need to complete the bootcamp.
+Вот как устроен тренировочный центр Akka.NET!
 
-Thus, if you want to follow the bootcamp we recommend doing the following:
+### Используйте Github, чтобы упростить себе жизнь
 
-1. Sign up for [Github](https://github.com/), if you haven't already.
-2. [Fork this repository](https://github.com/petabridge/akka-bootcamp/fork) and clone your fork to your local machine.
-3. As you go through the project, keep a web browser tab open to the [Akka.NET Bootcamp ReadMes](https://github.com/petabridge/akka-bootcamp/) so you can read all of the instructions clearly and easily.
+Этот Github репозиторий содержит проекты файлов для Visual Studio, а также другие ресурсы необходимые для работы.
 
-### Bootcamp Structure
+Таким образом, если вы хотите заниматься, мы рекомендуем следующее:
 
-Akka.NET Bootcamp consists of three modules:
+1. Если у вас ее еще нету, заведите учетную запись на [Github](https://github.com/).
+2. [Форкните этот репозиторий](https://github.com/petabridge/akka-bootcamp/fork) и склонируйте ваш форк на локальную машину.
+3. На протяжении работы с проектом, держите окно браузера открытым, чтобы видеть [Akka.NET Bootcamp ReadMes](https://github.com/petabridge/akka-bootcamp/). Таким образом вы сможете читать документацию одновременно с работой в студии.
 
-* **Unit 1 - Beginning Akka.NET**
-* **Unit 2 - Intermediate Akka.NET**
-* **Unit 3 - Advanced Akka.NET**
+### Структура тренировочного центра
 
-Each module contains the following structure (using **Unit 1** as an example:)
+Тренировочный центр Akka.NET состоит из 3-х блоков:
+
+* **Блок 1 - Начало работы с Akka.NET**
+* **Блок 2 - Akka.NET для середнячков**
+* **Блок 3 - Продвинутые техники Akka.NET**
+
+Каждый блок имеет следующую структуру ( для примера возьмем **Блок 1**) :
 
 ````
-src\Unit1\README.MD - table of contents and instructions for the module
-src\Unit1\DoThis\ - contains the .SLN and project files that you will use through all lessons
--- lesson 1
-src\Unit1\Lesson1\README.MD - README explaining lesson1
-src\Unit1\Lesson1\DoThis\ - C# classes, images, text files, and other junk you'll need to complete lesson1
-src\Unit1\Lesson1\Completed\ - Got stuck on lesson1? This folder shows the "expected" output for the lesson
--- repeat for all lessons
+src\Unit1\README.MD - оглавление и инструкции по выполнению модуля
+src\Unit1\DoThis\ - содержит .SLN и файлы проектов, которые вам понадобятся в этом блоке
+-- урок  1
+src\Unit1\Lesson1\README.MD - README описывающий урок
+src\Unit1\Lesson1\DoThis\ - C# классы, изображения, текстовые файлы, и другое барахло необходимое для выполнения первого урока
+src\Unit1\Lesson1\Completed\ - Застряли на выполнении урока? В этой папке вы найдете "эталонное" решение для задачи.
+-- и т.д. для остальных уроков в блоке
 ````
 
-Start with the first lesson in each unit and follow the links through their README files on Github. We're going to begin with **[Unit 1, Lesson 1](src/Unit-1/lesson1)**.
+Начанайте выполнение заданий с первого урока в каждом блоке, и следуйте по ссылкам внутри README файлов на Github. Мы стартуем с **[Блока 1, урока 1](src/Unit-1/lesson1)**.
 
-### Lesson Layout
-Each Akka.NET Bootcamp lesson contains a README which explains the following:
+### Структура урока
+Каждый урок содержит README файл со следующей информацией:
 
-1. The Akka.NET concepts and tools you will be applying in the lesson, along with links to any relevant documentation or examples
-2. Step-by-step instructions on how to modify the .NET project inside the `Unit-[Num]/DoThis/` to match the expected output at the end of each lesson.
-3. If you get stuck following the step-by-step instructions, each lesson contains its own `/Completed/` folder that shows the full source code that will produce the expected output. You can compare this against your own code and see what you need to do differently.
+1. Концепции и инструменты Akka.NET, которые вы будете применять на этом уроке. Плюс ссылки на дополнительную информацию и примеры
+2. Пошаговые инструкции по изменению .NET проекта внутри папки `Unit-[Num]/DoThis/`. 
+3. Если вы застряли на выполнении задания, каждый урок содержит свою папку  `/Completed/`, с готовым к выполенению кодом задания.  Можете сравнить его со своей реализацией и таким образом найти несоответствия.
 
-#### When you're doing the lessons...
+#### Когда вы выполняете задания...
 
-A few things to bear in mind when you're following the step-by-step instructions:
+Несколько вещей, на которые стоит обраттиь внимание при выполнении пошаговых инструкций:
 
 1. **Don't just copy and paste the code shown in the lesson's README**. You'll retain and learn all of the built-in Akka.NET functions if you type out the code as it's shown. [Kinesthetic learning](http://en.wikipedia.org/wiki/Kinesthetic_learning) FTW!
 2. **You might be required to fill in some blanks during individual lessons.** Part of helping you learn Akka.NET involves leaving some parts of the exercise up to you - if you ever feel lost, always check the contents of the `/Completed` folder for that lesson.
