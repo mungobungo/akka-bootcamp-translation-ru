@@ -58,7 +58,7 @@ namespace WinTail
             else if (String.Equals(message, ExitCommand, StringComparison.OrdinalIgnoreCase))
             {
                 // shut down the entire actor system (allows the process to exit)
-                Context.System.Shutdown();
+                Context.System.Terminate();
             }
             else
             {
